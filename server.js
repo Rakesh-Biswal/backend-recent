@@ -9,7 +9,11 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: "https://664edde8bac6f5b1d41dd4a6-grand-griff.netlify.app/"
+  })
+);
 app.use(express.json());
 
 // Database connection
