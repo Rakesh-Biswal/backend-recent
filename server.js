@@ -16,7 +16,7 @@ mongoose
 
 const corsOptions = {
   origin: [
-    "https://664edde8bac6f5b1d41dd4a6-grand-griff.netlify.app",
+    "https://click-and-win.netlify.app/",
     "http://localhost:3000"
   ], // Add all your frontend URLs here
   optionsSuccessStatus: 200 // Some legacy browsers choke on 204
