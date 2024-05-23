@@ -1,9 +1,10 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const requestIp = require('request-ip');
-const User = require('./User'); // Ensure this path is correct
-const Payment = require('./Payment'); // Ensure this path is correct
+const User = require('./models/User'); // Ensure this path is correct
+const Payment = require('./models/Payment'); // Ensure this path is correct
 
 const app = express();
 const PORT = 3000;
@@ -13,25 +14,19 @@ mongoose
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.log("MongoDB connection error:", err));
 
-  const corsOptions = {
-    origin: [
-      "https://664edde8bac6f5b1d41dd4a6-grand-griff.netlify.app",
-      "http://localhost:3000"
-    ], // Add all your frontend URLs here
-    optionsSuccessStatus: 200 //agally Some legacy browsers choke on 204
-  };
-  
- 
-app.use(
-  cors(corsOptions)
-);
+const corsOptions = {
+  origin: [
+    "https://664edde8bac6f5b1d41dd4a6-grand-griff.netlify.app",
+    "http://localhost:3000"
+  ], // Add all your frontend URLs here
+  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+};
 
+app.use(cors(corsOptions));
 app.options('*', cors(corsOptions)); // Handle preflight requests
 
 app.use(express.json());
 app.use(requestIp.mw());
-
-
 
 app.post('/update-link', async (req, res) => {
   const { userId, linkIndex } = req.body;
@@ -73,8 +68,6 @@ app.get('/profiles/:userId', async (req, res) => {
   }
 });
 
-
-
 app.get('/personal/:userId', async (req, res) => {
   const userId = req.params.userId;
 
@@ -95,38 +88,35 @@ app.get('/personal/:userId', async (req, res) => {
   }
 });
 
-
-
 app.post('/RemainsCoin/:userId', async (req, res) => {
-  const { withdrawCoin, UpiId, userId,checkPassword} = req.body;
-  
+  const { withdrawCoin, UpiId, userId, checkPassword } = req.body;
+
   try {
-     const user = await User.findOne();
-    
+    const user = await User.findOne();
+
     if (!user) {
       return res.status(400).json({ message: 'User not found' });
     }
-    const TotalCoin=user.coins;
-    
+    const TotalCoin = user.coins;
+
     if (withdrawCoin > TotalCoin) {
       return res.status(400).json({ message: 'Coin is not available' });
     }
-    if (checkPassword!=user.password) {
+    if (checkPassword != user.password) {
       return res.status(400).json({ message: 'Password Is Invalid' });
     }
 
-    if (withdrawCoin<5) {
+    if (withdrawCoin < 5) {
       return res.status(400).json({ message: 'Minimum withDraw Amount = 5' });
     }
 
-    
-    const Name=user.name;
+    const Name = user.name;
 
-    const newPayment = new Payment({ Name,withdrawCoin, UpiId});
+    const newPayment = new Payment({ Name, withdrawCoin, UpiId });
     await newPayment.save();
 
-    const RemainCoin = TotalCoin-withdrawCoin;
-    
+    const RemainCoin = TotalCoin - withdrawCoin;
+
     user.coins = RemainCoin;
     await user.save();
 
@@ -136,9 +126,6 @@ app.post('/RemainsCoin/:userId', async (req, res) => {
     res.status(500).json({ message: 'Failed to update link' });
   }
 });
-
-
-
 
 app.post('/register', async (req, res) => {
   const { name, phone, email, password, ip, linkStatus } = req.body;
@@ -154,7 +141,7 @@ app.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'You have already registered on this device' });
     }
 
-    const newUser = new User({ name, phone, email, password, ip, coins: 0, linkStatus, });
+    const newUser = new User({ name, phone, email, password, ip, coins: 0, linkStatus });
     await newUser.save();
 
     res.json({ message: 'Registration successful' });
