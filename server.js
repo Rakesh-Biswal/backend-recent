@@ -133,16 +133,16 @@ app.post('/RemainsCoin/:userId', async (req, res) => {
 // Endpoint to register a new user
 // Endpoint to register a new user
 app.post('/register', async (req, res) => {
-  const { name, phone, email, password, ip } = req.body;
+  const { name, phone,password, ip } = req.body;
 
   try {
     // Check if email is provided
-    if (!email) {
-      return res.status(400).json({ message: 'Email is required' });
-    }
+    // if (!email) {
+    //   return res.status(400).json({ message: 'Email is required' });
+    // }
 
     // Check if a user with the provided email already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({phone});
     if (existingUser) {
       return res.status(400).json({ message: 'Email already exists' });
     }
@@ -157,7 +157,7 @@ app.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create a new user object
-    const newUser = new User({ name, phone, email, password: hashedPassword, ip, coins: 0 });
+    const newUser = new User({ name, phone, password: hashedPassword, ip, coins: 0 });
 
     // Save the new user to the database
     await newUser.save();
@@ -167,9 +167,6 @@ app.post('/register', async (req, res) => {
   } catch (error) {
     console.error('Error:', error);
     // Handle MongoDB errors (such as duplicate key error)
-    if (error.code === 11000 && error.keyPattern && error.keyPattern.email) {
-      return res.status(400).json({ message: 'Email already exists' });
-    }
     // Other errors
     res.status(500).json({ message: 'Registration failed', error: error.message });
   }
