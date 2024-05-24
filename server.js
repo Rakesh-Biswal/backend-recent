@@ -20,7 +20,7 @@ mongoose
 const corsOptions = {
   origin: [
     "https://click-and-win.netlify.app",
-    "https://backend-recent-1.onrender.com",
+    "https://backend-recent-2.onrender.com",
     "http://localhost:3000"
   ],
   optionsSuccessStatus: 200, // Some legacy browsers choke on 204
