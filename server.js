@@ -3,11 +3,12 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const requestIp = require('request-ip');
+const bcrypt = require('bcrypt'); // For password hashing
 const User = require('./models/User'); // Ensure this path is correct
 const Payment = require('./models/Payment'); // Ensure this path is correct
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000; // Use environment variable for port
 
 mongoose
   .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -20,8 +21,8 @@ const corsOptions = {
     "https://backend-recent-1.onrender.com",
     "http://localhost:3000"
   ],
-  optionsSuccessStatus: 200, // Some legacy browsers choke on 204
-  credentials: true // Allow credentials
+  optionsSuccessStatus: 200,
+  credentials: true
 };
 
 app.use(cors(corsOptions));
@@ -30,13 +31,14 @@ app.options('*', cors(corsOptions)); // Handle preflight requests
 app.use(express.json());
 app.use(requestIp.mw());
 
+// Endpoint to update link status and user coins
 app.post('/update-link', async (req, res) => {
   const { userId, linkIndex } = req.body;
 
   try {
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(400).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'User not found' });
     }
 
     user.coins += 10;
@@ -50,13 +52,14 @@ app.post('/update-link', async (req, res) => {
   }
 });
 
+// Endpoint to fetch user profile by ID
 app.get('/profiles/:userId', async (req, res) => {
   const userId = req.params.userId;
 
   try {
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(400).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'User not found' });
     }
     res.json({
       name: user.name,
@@ -70,13 +73,14 @@ app.get('/profiles/:userId', async (req, res) => {
   }
 });
 
+// Endpoint to fetch personal user details by ID
 app.get('/personal/:userId', async (req, res) => {
   const userId = req.params.userId;
 
   try {
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(400).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'User not found' });
     }
     res.json({
       name: user.name,
@@ -90,45 +94,43 @@ app.get('/personal/:userId', async (req, res) => {
   }
 });
 
+// Endpoint to handle coin withdrawal
 app.post('/RemainsCoin/:userId', async (req, res) => {
   const { withdrawCoin, UpiId, userId, checkPassword } = req.body;
 
   try {
     const user = await User.findById(userId);
-
     if (!user) {
-      return res.status(400).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'User not found' });
     }
-    const TotalCoin = user.coins;
-
-    if (withdrawCoin > TotalCoin) {
-      return res.status(400).json({ message: 'Coin is not available' });
+    
+    const isMatch = await bcrypt.compare(checkPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid password' });
     }
-    if (checkPassword != user.password) {
-      return res.status(400).json({ message: 'Password Is Invalid' });
+    
+    if (withdrawCoin > user.coins) {
+      return res.status(400).json({ message: 'Insufficient coins' });
     }
 
     if (withdrawCoin < 500) {
-      return res.status(400).json({ message: 'Minimum withDraw Amount = 500' });
+      return res.status(400).json({ message: 'Minimum withdraw amount is 500' });
     }
 
-    const Name = user.name;
-
-    const newPayment = new Payment({ Name, withdrawCoin, UpiId });
+    const newPayment = new Payment({ Name: user.name, withdrawCoin, UpiId });
     await newPayment.save();
 
-    const RemainCoin = TotalCoin - withdrawCoin;
-
-    user.coins = RemainCoin;
+    user.coins -= withdrawCoin;
     await user.save();
 
-    res.json({ message: 'Link updated successfully', user });
+    res.json({ message: 'Withdrawal successful', user });
   } catch (error) {
     console.error('Error:', error);
-    res.status(500).json({ message: 'Failed to update link' });
+    res.status(500).json({ message: 'Failed to process withdrawal' });
   }
 });
 
+// Endpoint to register a new user
 app.post('/register', async (req, res) => {
   const { name, phone, email, password, ip, linkStatus } = req.body;
 
@@ -143,25 +145,32 @@ app.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'You have already registered on this device' });
     }
 
-    const newUser = new User({ name, phone, email, password, ip, coins: 0, linkStatus });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new User({ name, phone, email, password: hashedPassword, ip, coins: 0, linkStatus });
     await newUser.save();
 
     res.json({ message: 'Registration successful' });
   } catch (error) {
+    console.error('Error:', error);
     res.status(500).json({ message: 'Registration failed', error: error.message });
   }
 });
 
+// Endpoint to handle user login
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
+
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'User not found' });
     }
-    if (user.password !== password) {
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
       return res.status(400).json({ message: 'Invalid password' });
     }
+
     res.json({ message: 'Login successful', userId: user._id });
   } catch (error) {
     console.error('Error:', error);
@@ -170,5 +179,5 @@ app.post('/login', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log("Server is running on port " + PORT);
+  console.log("Server is running on port"+PORT);
 });
