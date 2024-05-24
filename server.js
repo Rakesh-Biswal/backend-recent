@@ -148,12 +148,7 @@ app.post('/register', async (req, res) => {
 
     res.json({ message: 'Registration successful' });
   } catch (error) {
-    console.error('Error during registration:', error); // More detailed error logging
-    if (error.code === 11000) {
-      res.status(400).json({ message: 'Duplicate key error' });
-    } else {
-      res.status(500).json({ message: 'Registration failed', error: error.message });
-    }
+    res.status(500).json({ message: 'Registration failed', error: error.message });
   }
 });
 
