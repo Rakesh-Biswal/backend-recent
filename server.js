@@ -37,21 +37,23 @@ app.post("/update-link", async (req, res) => {
   const { userId, linkIndex } = req.body;
 
   try {
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(400).json({ message: "User not found" });
-    }
+      const user = await User.findById(userId);
+      if (!user) {
+          return res.status(400).json({ message: "User not found" });
+      }
 
-    user.coins += 10;
-    user.linkStatus[linkIndex] = true;
-    await user.save();
+      user.coins += 10;
+      user.linkStatus[linkIndex] = true;
+      await user.save();
 
-    res.json({ message: "Link updated successfully", user });
+      res.json({ message: "Link updated successfully", user });
   } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ message: "Failed to update link" });
+      console.error("Error:", error);
+      res.status(500).json({ message: "Failed to update link" });
   }
 });
+
+
 
 app.get("/profiles/:userId", async (req, res) => {
   const userId = req.params.userId;
