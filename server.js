@@ -16,7 +16,7 @@ mongoose
 
 const corsOptions = {
   origin: [
-    "https://click-and-win.netlify.app",
+    "https://click-and-win.netlify.app","https://backend-recent-1.onrender.com",
     "http://localhost:3000"
   ], // Add all your frontend URLs here
   optionsSuccessStatus: 200 // Some legacy browsers choke on 204
