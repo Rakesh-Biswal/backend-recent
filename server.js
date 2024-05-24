@@ -108,8 +108,8 @@ app.post('/RemainsCoin/:userId', async (req, res) => {
       return res.status(400).json({ message: 'Password Is Invalid' });
     }
 
-    if (withdrawCoin < 5) {
-      return res.status(400).json({ message: 'Minimum withDraw Amount = 5' });
+    if (withdrawCoin < 500) {
+      return res.status(400).json({ message: 'Minimum withDraw Amount = 500' });
     }
 
     const Name = user.name;
