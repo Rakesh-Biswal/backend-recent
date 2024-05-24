@@ -16,10 +16,12 @@ mongoose
 
 const corsOptions = {
   origin: [
-    "https://click-and-win.netlify.app","https://backend-recent-1.onrender.com",
+    "https://click-and-win.netlify.app",
+    "https://backend-recent-1.onrender.com",
     "http://localhost:3000"
-  ], // Add all your frontend URLs here
-  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+  ],
+  optionsSuccessStatus: 200, // Some legacy browsers choke on 204
+  credentials: true // Allow credentials
 };
 
 app.use(cors(corsOptions));
@@ -92,7 +94,7 @@ app.post('/RemainsCoin/:userId', async (req, res) => {
   const { withdrawCoin, UpiId, userId, checkPassword } = req.body;
 
   try {
-    const user = await User.findOne();
+    const user = await User.findById(userId);
 
     if (!user) {
       return res.status(400).json({ message: 'User not found' });
