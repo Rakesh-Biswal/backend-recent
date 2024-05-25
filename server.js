@@ -37,19 +37,19 @@ app.post("/update-link", async (req, res) => {
   const { userId, linkIndex } = req.body;
 
   try {
-      const user = await User.findById(userId);
-      if (!user) {
-          return res.status(400).json({ message: "User not found" });
-      }
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
 
-      user.coins += 10;
-      user.linkStatus[linkIndex] = true;
-      await user.save();
+    user.coins += 10;
+    user.linkStatus[linkIndex] = true;
+    await user.save();
 
-      res.json({ message: "Link updated successfully", user });
+    res.json({ message: "Link updated successfully", user });
   } catch (error) {
-      console.error("Error:", error);
-      res.status(500).json({ message: "Failed to update link" });
+    console.error("Error:", error);
+    res.status(500).json({ message: "Failed to update link" });
   }
 });
 
@@ -136,9 +136,9 @@ app.post("/RemainsCoin/:userId", async (req, res) => {
 
 app.post("/register", async (req, res) => {
   try {
-    
     const { name, phone, email, password, ip, linkStatus } = req.body;
 
+    // Find existing user by email, phone, or IP
     const existingUser = await User.findOne({
       $or: [{ email }, { phone }, { ip }]
     });
@@ -146,14 +146,10 @@ app.post("/register", async (req, res) => {
     if (existingUser) {
       if (existingUser.email === email) {
         return res.status(400).json({ message: "Email already exists" });
-      } else if (existingUser.phone !== phone) {
-        return res
-          .status(400)
-          .json({ message: "Mobile number already exists" });
+      } else if (existingUser.phone === phone) {
+        return res.status(400).json({ message: "Mobile number already exists" });
       } else {
-        return res
-          .status(400)
-          .json({ message: "You have already registered on this device" });
+        return res.status(400).json({ message: "You have already registered on this device" });
       }
     }
 
@@ -170,17 +166,15 @@ app.post("/register", async (req, res) => {
     await newUser.save();
     res.json({ message: "Registration successful" });
   } catch (error) {
-    console.error("Error during registration:", error); // More detailed error logging
-
+    console.error("Error during registration:", error);
     if (error.code === 11000) {
       res.status(400).json({ message: "Duplicate key error" });
     } else {
-      res
-        .status(500)
-        .json({ message: "Registration failed", error: error.message });
+      res.status(500).json({ message: "Registration failed", error: error.message });
     }
   }
 });
+
 
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
