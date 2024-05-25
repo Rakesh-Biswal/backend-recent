@@ -96,25 +96,6 @@ app.get("/personal/:userId", async (req, res) => {
 });
 
 
-app.get("/wdcoin/:userId", async (req, res) => {
-  const userId = req.params.userId;
-
-  try {
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(400).json({ message: "User not found" });
-    }
-    res.json({
-      coins: user.coins || 0,
-    });
-  } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ message: "Failed to fetch profile details" });
-  }
-});
-
-
-
 
 app.post("/RemainsCoin/:userId", async (req, res) => {
   const { withdrawCoin, UpiId, userId, checkPassword } = req.body;
