@@ -155,7 +155,8 @@ app.post("/register", async (req, res) => {
   try {
     const { name, phone, email, password, ip, referrerId } = req.body;
 
-    // Find existing user by email, phone, or IP
+    console.log("Received registration data:", req.body); // Log request body
+
     const existingUser = await User.findOne({
       $or: [{ email }, { phone }, { ip }]
     });
@@ -170,7 +171,6 @@ app.post("/register", async (req, res) => {
       }
     }
 
-    // Create a new user
     const newUser = new User({
       name,
       phone,
@@ -178,27 +178,26 @@ app.post("/register", async (req, res) => {
       password,
       ip,
       coins: 0,
-      linkStatus: [], // Initialize linkStatus array
-      referrer: referrerId // Store the referrer's user ID
+      linkStatus: [],
+      referrer: referrerId
     });
 
-    // Save the new user
     await newUser.save();
 
-    // Credit rewards to the referrer (if applicable)
     if (referrerId) {
       const referrer = await User.findById(referrerId);
       if (referrer) {
-        console.log(referrer);
-        // Credit rewards to the referrer's account (e.g., 50 coins)
+        console.log("Referrer found:", referrer); // Log referrer details
         referrer.coins += 50;
         await referrer.save();
+      } else {
+        console.log("Referrer not found"); // Log if referrer not found
       }
     }
 
     res.json({ message: "Registration successful" });
   } catch (error) {
-    console.error("Error during registration:", error);
+    console.error("Error during registration:", error); // Detailed error logging
     if (error.code === 11000) {
       res.status(400).json({ message: "Duplicate key error" });
     } else {
