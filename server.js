@@ -189,13 +189,11 @@ app.post("/register", async (req, res) => {
     if (referrerId) {
       const referrer = await User.findById(referrerId);
       if (referrer) {
+        console.log(referrer);
         // Credit rewards to the referrer's account (e.g., 50 coins)
         referrer.coins += 50;
         await referrer.save();
       }
-    }
-    else{
-      res.json({ message: "Invalid Referral Code.." });
     }
 
     res.json({ message: "Registration successful" });

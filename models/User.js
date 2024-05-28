@@ -8,7 +8,7 @@ const UserSchema = new mongoose.Schema({
   ip: { type: String, required: true, unique: true },
   coins: { type: Number, default: 0 },
   linkStatus: { type: Array, default: [] },
-  referrer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }
+  referrer: { type:string, ref: 'User', default: null }
 });
 
 module.exports = mongoose.models.User || mongoose.model("User", UserSchema);
