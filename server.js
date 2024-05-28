@@ -33,6 +33,7 @@ app.options("*", cors(corsOptions)); // Handle preflight requests
 app.use(express.json());
 app.use(requestIp.mw());
 
+// Modified /update-link route
 app.post("/update-link", async (req, res) => {
   const { userId, linkIndex } = req.body;
 
@@ -42,6 +43,19 @@ app.post("/update-link", async (req, res) => {
       return res.status(400).json({ message: "User not found" });
     }
 
+    // Check if the user has seen all previous links
+    for (let i = 0; i < linkIndex; i++) {
+      if (!user.linkStatus[i]) {
+        return res.status(400).json({ message: "Please view all previous links first" });
+      }
+    }
+
+    // Check if the latest link is already seen
+    if (user.linkStatus[linkIndex]) {
+      return res.status(200).json({ message: "Link already seen", user });
+    }
+
+    // Update user data
     user.coins += 10;
     user.linkStatus[linkIndex] = true;
     await user.save();
@@ -52,6 +66,7 @@ app.post("/update-link", async (req, res) => {
     res.status(500).json({ message: "Failed to update link" });
   }
 });
+
 
 
 
@@ -138,7 +153,7 @@ app.post("/RemainsCoin/:userId", async (req, res) => {
 
 app.post("/register", async (req, res) => {
   try {
-    const { name, phone, email, password, ip, linkStatus } = req.body;
+    const { name, phone, email, password, ip, referrerId } = req.body;
 
     // Find existing user by email, phone, or IP
     const existingUser = await User.findOne({
@@ -155,6 +170,7 @@ app.post("/register", async (req, res) => {
       }
     }
 
+    // Create a new user
     const newUser = new User({
       name,
       phone,
@@ -162,10 +178,23 @@ app.post("/register", async (req, res) => {
       password,
       ip,
       coins: 0,
-      linkStatus
+      linkStatus: [], // Initialize linkStatus array
+      referrer: referrerId // Store the referrer's user ID
     });
 
+    // Save the new user
     await newUser.save();
+
+    // Credit rewards to the referrer (if applicable)
+    if (referrerId) {
+      const referrer = await User.findById(referrerId);
+      if (referrer) {
+        // Credit rewards to the referrer's account (e.g., 50 coins)
+        referrer.coins += 50;
+        await referrer.save();
+      }
+    }
+
     res.json({ message: "Registration successful" });
   } catch (error) {
     console.error("Error during registration:", error);
@@ -176,6 +205,7 @@ app.post("/register", async (req, res) => {
     }
   }
 });
+
 
 
 app.post("/login", async (req, res) => {
