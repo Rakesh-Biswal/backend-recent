@@ -194,6 +194,9 @@ app.post("/register", async (req, res) => {
         await referrer.save();
       }
     }
+    else{
+      res.json({ message: "Invalid Referral Code.." });
+    }
 
     res.json({ message: "Registration successful" });
   } catch (error) {
