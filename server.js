@@ -67,9 +67,7 @@ app.post("/update-link", async (req, res) => {
   }
 });
 
-
-
-
+// Fetch user profile
 app.get("/profiles/:userId", async (req, res) => {
   const userId = req.params.userId;
 
@@ -90,6 +88,7 @@ app.get("/profiles/:userId", async (req, res) => {
   }
 });
 
+// Fetch personal user data
 app.get("/personal/:userId", async (req, res) => {
   const userId = req.params.userId;
 
@@ -110,8 +109,7 @@ app.get("/personal/:userId", async (req, res) => {
   }
 });
 
-
-
+// Handle withdrawal requests
 app.post("/RemainsCoin/:userId", async (req, res) => {
   const { withdrawCoin, UpiId, userId, checkPassword } = req.body;
 
@@ -151,6 +149,7 @@ app.post("/RemainsCoin/:userId", async (req, res) => {
   }
 });
 
+// Handle user registration
 app.post("/register", async (req, res) => {
   try {
     const { name, phone, email, password, ip, referrerId } = req.body;
@@ -206,8 +205,7 @@ app.post("/register", async (req, res) => {
   }
 });
 
-
-
+// Handle user login
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
   try {
