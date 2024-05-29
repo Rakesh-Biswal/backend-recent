@@ -153,8 +153,9 @@ app.post("/RemainsCoin/:userId", async (req, res) => {
 
 app.post("/register", async (req, res) => {
   try {
-    const { name, phone, email, password, ip} = req.body;
+    const { name, phone, email, password, ip, linkStatus } = req.body;
 
+    // Find existing user by email, phone, or IP
     const existingUser = await User.findOne({
       $or: [{ email }, { phone }, { ip }]
     });
@@ -176,14 +177,13 @@ app.post("/register", async (req, res) => {
       password,
       ip,
       coins: 0,
-      linkStatus: [],
+      linkStatus
     });
 
     await newUser.save();
-
     res.json({ message: "Registration successful" });
   } catch (error) {
-    console.error("Error during registration:", error); // Detailed error logging
+    console.error("Error during registration:", error);
     if (error.code === 11000) {
       res.status(400).json({ message: "Duplicate key error" });
     } else {
@@ -191,7 +191,6 @@ app.post("/register", async (req, res) => {
     }
   }
 });
-
 
 
 app.post("/login", async (req, res) => {
