@@ -33,7 +33,6 @@ app.options("*", cors(corsOptions)); // Handle preflight requests
 app.use(express.json());
 app.use(requestIp.mw());
 
-// Modified /update-link route
 app.post("/update-link", async (req, res) => {
   const { userId, linkIndex } = req.body;
 
@@ -43,19 +42,6 @@ app.post("/update-link", async (req, res) => {
       return res.status(400).json({ message: "User not found" });
     }
 
-    // Check if the user has seen all previous links
-    for (let i = 0; i < linkIndex; i++) {
-      if (!user.linkStatus[i]) {
-        return res.status(400).json({ message: "Please view all previous links first" });
-      }
-    }
-
-    // Check if the latest link is already seen
-    if (user.linkStatus[linkIndex]) {
-      return res.status(200).json({ message: "Link already seen", user });
-    }
-
-    // Update user data
     user.coins += 10;
     user.linkStatus[linkIndex] = true;
     await user.save();
@@ -66,7 +52,6 @@ app.post("/update-link", async (req, res) => {
     res.status(500).json({ message: "Failed to update link" });
   }
 });
-
 
 
 
