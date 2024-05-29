@@ -67,7 +67,9 @@ app.post("/update-link", async (req, res) => {
   }
 });
 
-// Fetch user profile
+
+
+
 app.get("/profiles/:userId", async (req, res) => {
   const userId = req.params.userId;
 
@@ -88,7 +90,6 @@ app.get("/profiles/:userId", async (req, res) => {
   }
 });
 
-// Fetch personal user data
 app.get("/personal/:userId", async (req, res) => {
   const userId = req.params.userId;
 
@@ -109,7 +110,8 @@ app.get("/personal/:userId", async (req, res) => {
   }
 });
 
-// Handle withdrawal requests
+
+
 app.post("/RemainsCoin/:userId", async (req, res) => {
   const { withdrawCoin, UpiId, userId, checkPassword } = req.body;
 
@@ -149,12 +151,9 @@ app.post("/RemainsCoin/:userId", async (req, res) => {
   }
 });
 
-// Handle user registration
 app.post("/register", async (req, res) => {
   try {
-    const { name, phone, email, password, ip, referrerId } = req.body;
-
-    console.log("Received registration data:", req.body); // Log request body
+    const { name, phone, email, password, ip} = req.body;
 
     const existingUser = await User.findOne({
       $or: [{ email }, { phone }, { ip }]
@@ -178,21 +177,9 @@ app.post("/register", async (req, res) => {
       ip,
       coins: 0,
       linkStatus: [],
-      referrer: referrerId
     });
 
     await newUser.save();
-
-    if (referrerId) {
-      const referrer = await User.findById(referrerId);
-      if (referrer) {
-        console.log("Referrer found:", referrer); // Log referrer details
-        referrer.coins += 50;
-        await referrer.save();
-      } else {
-        console.log("Referrer not found"); // Log if referrer not found
-      }
-    }
 
     res.json({ message: "Registration successful" });
   } catch (error) {
@@ -205,7 +192,8 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// Handle user login
+
+
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
   try {
