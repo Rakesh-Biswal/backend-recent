@@ -47,30 +47,23 @@ app.post('/update-link', async (req, res) => {
       user.coins += 10;
       await user.save();
 
-      // Check if the user has visited at least 4 links
       const visitedLinks = user.linkStatus.filter(status => status).length;
       if (visitedLinks >= 4 && user.referrer) {
         const referringUser = await User.findById(user.referrer);
         if (referringUser) {
           referringUser.coins += 50;
-          referringUser.referrals.push(user.name); // Store user ID instead of name
-          referringUser.referralCoins += 50;
           await referringUser.save();
         }
       }
+    }
 
-      // Check if the user's coins reach 500 and update the referrer's coins
-      if (user.coins >= 500 && user.referrer && !user.referrerBonusApplied) {
-        const referringUser = await User.findById(user.referrer);
-        if (referringUser) {
-          referringUser.coins += 100;
-          referringUser.referralCoins += 100;
-          await referringUser.save();
-
-          // Mark the bonus as applied
-          user.referrerBonusApplied = true;
-          await user.save();
-        }
+    if (user.coins >= 500 && user.referrer && !user.referralComplete.includes(user.referrer)) {
+      const referringUser = await User.findById(user.referrer);
+      if (referringUser) {
+        referringUser.coins += 100;
+        user.referralComplete.push(user.referrer);
+        await referringUser.save();
+        await user.save();
       }
     }
 
@@ -81,14 +74,11 @@ app.post('/update-link', async (req, res) => {
   }
 });
 
-
-
-
 app.get('/profiles/:userId', async (req, res) => {
   const userId = req.params.userId;
 
   try {
-    const user = await User.findById(userId).populate('referrals', 'name');
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(400).json({ message: 'User not found' });
     }
@@ -96,9 +86,8 @@ app.get('/profiles/:userId', async (req, res) => {
       name: user.name,
       coins: user.coins || 0,
       linkStatus: user.linkStatus || [],
-      referrals: user.referrals.map(ref => ref.name),
-      referralCoins: user.referralCoins || 0,
-      userId: user._id
+      userId: user._id,
+      referrals: await User.find({ referrer: user._id }).select('name').lean()
     });
   } catch (error) {
     console.error('Error:', error);
@@ -224,6 +213,7 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Login failed' });
   }
 });
+
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
