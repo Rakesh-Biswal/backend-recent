@@ -77,8 +77,6 @@ app.post('/update-link', async (req, res) => {
 });
 
 
-
-
 app.get('/profiles/:userId', async (req, res) => {
   const userId = req.params.userId;
 
@@ -200,7 +198,7 @@ app.post('/register', async (req, res) => {
     if (error.code === 11000) {
       res.status(400).json({ message: 'Duplicate key error' });
     } else {
-      res.status(500).json({ message: 'Registration failed', error: error.message });
+      res.status(500).json({ message: 'Registration failed' });
     }
   }
 });
@@ -223,5 +221,5 @@ app.post('/login', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log('Server is running on port ' + PORT);
+  console.log(`Server running on port ${PORT}`);
 });
