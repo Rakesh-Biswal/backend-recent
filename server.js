@@ -53,6 +53,7 @@ app.post('/update-link', async (req, res) => {
         const referringUser = await User.findById(user.referrer);
         if (referringUser) {
           referringUser.coins += 50;
+          referringUser.referrals.push(user.name); // Add referred user's name to referrer's referrals
           await referringUser.save();
         }
       }
@@ -64,6 +65,7 @@ app.post('/update-link', async (req, res) => {
     res.status(500).json({ message: 'Failed to update link' });
   }
 });
+
 
 
 app.get('/profiles/:userId', async (req, res) => {
@@ -78,6 +80,7 @@ app.get('/profiles/:userId', async (req, res) => {
       name: user.name,
       coins: user.coins || 0,
       linkStatus: user.linkStatus || [],
+      referrals: user.referrals || [],
       userId: user._id
     });
   } catch (error) {
@@ -85,6 +88,7 @@ app.get('/profiles/:userId', async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch user details' });
   }
 });
+
 
 app.get('/personal/:userId', async (req, res) => {
   const userId = req.params.userId;
