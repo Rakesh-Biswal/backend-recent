@@ -7,9 +7,10 @@ const UserSchema = new mongoose.Schema({
   password: { type: String, required: true },
   ip: { type: String, required: true, unique: true },
   coins: { type: Number, default: 0 },
-  linkStatus: { type: [Number], default: [] }, // Array of link indexes user visited
-  referrer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }, // Referrer ID
-  referrals: { type: [String], default: [] } // Array of referred usernames
+  linkStatus: { type: [Number], default: [] },
+  referrer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  referrals: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // List of referred users
+  referralCoins: { type: Number, default: 0 } // Coins earned from referrals
 });
 
 module.exports = mongoose.models.User || mongoose.model("User", UserSchema);

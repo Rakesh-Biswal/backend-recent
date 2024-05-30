@@ -53,7 +53,17 @@ app.post('/update-link', async (req, res) => {
         const referringUser = await User.findById(user.referrer);
         if (referringUser) {
           referringUser.coins += 50;
-          referringUser.referrals.push(user.name); // Add referred user's name to referrer's referrals
+          referringUser.referralCoins += 50;
+          await referringUser.save();
+        }
+      }
+
+      // Check if the user's coins reach 500 and update the referrer's coins
+      if (user.coins >= 500 && user.referrer) {
+        const referringUser = await User.findById(user.referrer);
+        if (referringUser) {
+          referringUser.coins += 100;
+          referringUser.referralCoins += 100;
           await referringUser.save();
         }
       }
@@ -68,11 +78,12 @@ app.post('/update-link', async (req, res) => {
 
 
 
+
 app.get('/profiles/:userId', async (req, res) => {
   const userId = req.params.userId;
 
   try {
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).populate('referrals', 'name');
     if (!user) {
       return res.status(400).json({ message: 'User not found' });
     }
@@ -80,7 +91,8 @@ app.get('/profiles/:userId', async (req, res) => {
       name: user.name,
       coins: user.coins || 0,
       linkStatus: user.linkStatus || [],
-      referrals: user.referrals || [],
+      referrals: user.referrals.map(ref => ref.name),
+      referralCoins: user.referralCoins || 0,
       userId: user._id
     });
   } catch (error) {
@@ -88,6 +100,7 @@ app.get('/profiles/:userId', async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch user details' });
   }
 });
+
 
 
 app.get('/personal/:userId', async (req, res) => {
