@@ -53,7 +53,7 @@ app.post('/update-link', async (req, res) => {
         const referringUser = await User.findById(user.referrer);
         if (referringUser) {
           referringUser.coins += 50;
-          referringUser.referrals.push(user.name);
+          referringUser.referrals.push(user._id); // Store user ID instead of name
           referringUser.referralCoins += 50;
           await referringUser.save();
         }
@@ -64,7 +64,7 @@ app.post('/update-link', async (req, res) => {
         const referringUser = await User.findById(user.referrer);
         if (referringUser) {
           referringUser.coins += 100;
-          referringUser.referralCoins += 101;
+          referringUser.referralCoins += 100;
           await referringUser.save();
         }
       }
@@ -99,8 +99,6 @@ app.get('/profiles/:userId', async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch user details' });
   }
 });
-
-
 
 app.get('/personal/:userId', async (req, res) => {
   const userId = req.params.userId;
