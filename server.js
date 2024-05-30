@@ -177,14 +177,6 @@ app.post('/register', async (req, res) => {
 
     await newUser.save();
 
-    if (referralId) {
-      const referringUser = await User.findById(referralId);
-      if (referringUser) {
-        referringUser.coins += 50;
-        await referringUser.save();
-      }
-    }
-
     res.json({ message: 'Registration successful' });
   } catch (error) {
     console.error('Error during registration:', error);
