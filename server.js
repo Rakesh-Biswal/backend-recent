@@ -42,9 +42,21 @@ app.post('/update-link', async (req, res) => {
       return res.status(400).json({ message: 'User not found' });
     }
 
-    user.coins += 10;
-    user.linkStatus[linkIndex] = true;
-    await user.save();
+    if (!user.linkStatus[linkIndex]) {
+      user.linkStatus[linkIndex] = true;
+      user.coins += 10;
+      await user.save();
+
+      // Check if the user has visited at least 4 links
+      const visitedLinks = user.linkStatus.filter(status => status).length;
+      if (visitedLinks >= 4 && user.referrer) {
+        const referringUser = await User.findById(user.referrer);
+        if (referringUser) {
+          referringUser.coins += 50;
+          await referringUser.save();
+        }
+      }
+    }
 
     res.json({ message: 'Link updated successfully', user });
   } catch (error) {
@@ -52,6 +64,7 @@ app.post('/update-link', async (req, res) => {
     res.status(500).json({ message: 'Failed to update link' });
   }
 });
+
 
 app.get('/profiles/:userId', async (req, res) => {
   const userId = req.params.userId;

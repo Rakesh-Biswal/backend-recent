@@ -7,7 +7,7 @@ const UserSchema = new mongoose.Schema({
   password: { type: String, required: true },
   ip: { type: String, required: true, unique: true },
   coins: { type: Number, default: 0 },
-  linkStatus: { type: Array, default: [] },
+  linkStatus: { type: [Number], default: [] }, // Array of link indexes user visited
   referrer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null } // Referrer ID
 });
 
