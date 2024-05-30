@@ -53,19 +53,23 @@ app.post('/update-link', async (req, res) => {
         const referringUser = await User.findById(user.referrer);
         if (referringUser) {
           referringUser.coins += 50;
-          referringUser.referrals.push(user._id); // Store user ID instead of name
+          referringUser.referrals.push(user.name); // Store user ID instead of name
           referringUser.referralCoins += 50;
           await referringUser.save();
         }
       }
 
       // Check if the user's coins reach 500 and update the referrer's coins
-      if (user.coins >= 500 && user.referrer) {
+      if (user.coins >= 500 && user.referrer && !user.referrerBonusApplied) {
         const referringUser = await User.findById(user.referrer);
         if (referringUser) {
           referringUser.coins += 100;
           referringUser.referralCoins += 100;
           await referringUser.save();
+
+          // Mark the bonus as applied
+          user.referrerBonusApplied = true;
+          await user.save();
         }
       }
     }
@@ -76,6 +80,8 @@ app.post('/update-link', async (req, res) => {
     res.status(500).json({ message: 'Failed to update link' });
   }
 });
+
+
 
 
 app.get('/profiles/:userId', async (req, res) => {
