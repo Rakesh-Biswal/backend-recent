@@ -53,6 +53,7 @@ app.post('/update-link', async (req, res) => {
         const referringUser = await User.findById(user.referrer);
         if (referringUser) {
           referringUser.coins += 50;
+          referringUser.referrals.push(user.name);
           referringUser.referralCoins += 50;
           await referringUser.save();
         }
