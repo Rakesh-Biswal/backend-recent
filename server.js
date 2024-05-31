@@ -38,11 +38,9 @@ app.post('/register', async (req, res) => {
   try {
     const { name, phone, email, password, linkStatus, referralId } = req.body;
     const ip = req.clientIp; // Get the IP address of the user
-    const userAgent = req.headers['user-agent'];
-    const deviceIdentifier = `${ip}-${userAgent}`;
 
     const existingUser = await User.findOne({
-      $or: [{ email }, { phone }, { deviceIdentifier }]
+      $or: [{ email }, { phone }, { ip }]
     });
 
     if (existingUser) {
@@ -52,7 +50,7 @@ app.post('/register', async (req, res) => {
         return res.status(400).json({ message: 'Mobile number already exists' });
       }
       else {
-        return res.status(400).json({ message: 'You have already registered on this device' });
+        return res.status(400).json({ message: 'Already registered on this device/Network' });
       }
     }
 
@@ -61,7 +59,7 @@ app.post('/register', async (req, res) => {
       phone,
       email,
       password,
-      deviceIdentifier,
+      ip,
       coins: 0,
       linkStatus,
       referrer: referralId || null
