@@ -3,8 +3,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const requestIp = require('request-ip');
-const User = require('./models/User');
-const Payment = require('./models/Payment');
+const User = require('./models/User'); // Adjust the path if necessary
+const Payment = require('./models/Payment'); // Ensure this model is correctly defined
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -33,6 +33,68 @@ app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(requestIp.mw());
 
+// Registration endpoint
+app.post('/register', async (req, res) => {
+  try {
+    const { name, phone, email, password, ip, linkStatus, referralId } = req.body;
+
+    const existingUser = await User.findOne({
+      $or: [{ email }, { phone }, { ip }]
+    });
+
+    if (existingUser) {
+      if (existingUser.email === email) {
+        return res.status(400).json({ message: 'Email already exists' });
+      } else if (existingUser.phone === phone) {
+        return res.status(400).json({ message: 'Mobile number already exists' });
+      } else {
+        return res.status(400).json({ message: 'You have already registered on this device' });
+      }
+    }
+
+    const newUser = new User({
+      name,
+      phone,
+      email,
+      password,
+      ip,
+      coins: 0,
+      linkStatus,
+      referrer: referralId || null
+    });
+
+    await newUser.save();
+
+    res.json({ message: 'Registration successful' });
+  } catch (error) {
+    console.error('Error during registration:', error);
+    if (error.code === 11000) {
+      res.status(400).json({ message: 'Duplicate key error' });
+    } else {
+      res.status(500).json({ message: 'Registration failed' });
+    }
+  }
+});
+
+// Login endpoint
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: 'User not found' });
+    }
+    if (user.password !== password) {
+      return res.status(400).json({ message: 'Invalid password' });
+    }
+    res.json({ message: 'Login successful', userId: user._id });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: 'Login failed' });
+  }
+});
+
+// Update link endpoint
 app.post('/update-link', async (req, res) => {
   const { userId, linkIndex } = req.body;
 
@@ -76,8 +138,7 @@ app.post('/update-link', async (req, res) => {
   }
 });
 
-
-
+// Profiles endpoint
 app.get('/profiles/:userId', async (req, res) => {
   const userId = req.params.userId;
 
@@ -93,7 +154,6 @@ app.get('/profiles/:userId', async (req, res) => {
       userId: user._id,
       referralCoins: user.referralCoins || 0,
       referrals: user.referrals.map(ref => ({ name: ref.name })),
-      
     });
   } catch (error) {
     console.error('Error:', error);
@@ -101,7 +161,7 @@ app.get('/profiles/:userId', async (req, res) => {
   }
 });
 
-
+// Personal endpoint
 app.get('/personal/:userId', async (req, res) => {
   const userId = req.params.userId;
 
@@ -122,6 +182,7 @@ app.get('/personal/:userId', async (req, res) => {
   }
 });
 
+// Remains Coin endpoint
 app.post('/RemainsCoin/:userId', async (req, res) => {
   const { withdrawCoin, UpiId, checkPassword } = req.body;
   const userId = req.params.userId;
@@ -161,66 +222,6 @@ app.post('/RemainsCoin/:userId', async (req, res) => {
     res.status(500).json({ message: 'Failed to process withdrawal' });
   }
 });
-
-app.post('/register', async (req, res) => {
-  try {
-    const { name, phone, email, password, ip, linkStatus, referralId } = req.body;
-
-    const existingUser = await User.findOne({
-      $or: [{ email }, { phone }, { ip }]
-    });
-
-    if (existingUser) {
-      if (existingUser.email === email) {
-        return res.status(400).json({ message: 'Email already exists' });
-      } else if (existingUser.phone === phone) {
-        return res.status(400).json({ message: 'Mobile number already exists' });
-      } else {
-        return res.status(400).json({ message: 'You have already registered on this device' });
-      }
-    }
-
-    const newUser = new User({
-      name,
-      phone,
-      email,
-      password,
-      ip,
-      coins: 0,
-      linkStatus,
-      referrer: referralId || null
-    });
-
-    await newUser.save();
-
-    res.json({ message: 'Registration successful' });
-  } catch (error) {
-    console.error('Error during registration:', error);
-    if (error.code === 11000) {
-      res.status(400).json({ message: 'Duplicate key error' });
-    } else {
-      res.status(500).json({ message: 'Registration failed' });
-    }
-  }
-});
-
-app.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-  try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: 'User not found' });
-    }
-    if (user.password !== password) {
-      return res.status(400).json({ message: 'Invalid password' });
-    }
-    res.json({ message: 'Login successful', userId: user._id });
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ message: 'Login failed' });
-  }
-});
-
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
