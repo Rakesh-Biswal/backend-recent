@@ -38,9 +38,11 @@ app.post('/register', async (req, res) => {
   try {
     const { name, phone, email, password, linkStatus, referralId } = req.body;
     const ip = req.clientIp; // Get the IP address of the user
+    const userAgent = req.headers['user-agent'];
+    const deviceIdentifier = `${ip}-${userAgent}`;
 
     const existingUser = await User.findOne({
-      $or: [{ email }, { phone }, { ip }]
+      $or: [{ email }, { phone }, { deviceIdentifier }]
     });
 
     if (existingUser) {
@@ -59,7 +61,7 @@ app.post('/register', async (req, res) => {
       phone,
       email,
       password,
-      ip,
+      deviceIdentifier,
       coins: 0,
       linkStatus,
       referrer: referralId || null
