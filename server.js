@@ -36,7 +36,8 @@ app.use(requestIp.mw());
 // Registration endpoint
 app.post('/register', async (req, res) => {
   try {
-    const { name, phone, email, password, ip, linkStatus, referralId } = req.body;
+    const { name, phone, email, password, linkStatus, referralId } = req.body;
+    const ip = req.clientIp; // Get the IP address of the user
 
     const existingUser = await User.findOne({
       $or: [{ email }, { phone }, { ip }]
@@ -47,7 +48,8 @@ app.post('/register', async (req, res) => {
         return res.status(400).json({ message: 'Email already exists' });
       } else if (existingUser.phone === phone) {
         return res.status(400).json({ message: 'Mobile number already exists' });
-      } else {
+      }
+      else {
         return res.status(400).json({ message: 'You have already registered on this device' });
       }
     }
