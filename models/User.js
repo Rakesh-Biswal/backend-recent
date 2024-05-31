@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema({
     phone: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    ip: { type: String, required: true, unique: true },
+    deviceIdentifier: { type: String, required: true, unique: true },
     coins: { type: Number, default: 0 },
     referralId: { type: String, unique: true },
     referrals: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
