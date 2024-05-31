@@ -36,11 +36,10 @@ app.use(requestIp.mw());
 // Registration endpoint
 app.post('/register', async (req, res) => {
   try {
-    const { name, phone, email, password, linkStatus, referralId } = req.body;
-    const ip = req.clientIp; // Get the IP address of the user
+    const { name, phone, email, password,ip, linkStatus, referralId } = req.body;
 
     const existingUser = await User.findOne({
-      $or: [{ email }, { phone }, { ip }]
+      $or: haa[{ email }, { phone }, { ip }]
     });
 
     if (existingUser) {
