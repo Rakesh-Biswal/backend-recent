@@ -39,7 +39,7 @@ app.post('/register', async (req, res) => {
     const { name, phone, email, password,ip, linkStatus, referralId } = req.body;
 
     const existingUser = await User.findOne({
-      $or: haa[{ email }, { phone }, { ip }]
+      $or: [{ email }, { phone }, { ip }]
     });
 
     if (existingUser) {
