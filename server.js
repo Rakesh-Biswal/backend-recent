@@ -52,18 +52,20 @@ app.post('/update-link', async (req, res) => {
         const referringUser = await User.findById(user.referrer);
         if (referringUser) {
           referringUser.coins += 50;
+          referringUser.referralCoins += 50;
+          referringUser.referrals.push(user._id);
           await referringUser.save();
         }
       }
-    }
 
-    if (user.coins >= 500 && user.referrer && !user.referralComplete.includes(user.referrer)) {
-      const referringUser = await User.findById(user.referrer);
-      if (referringUser) {
-        referringUser.coins += 100;
-        user.referralComplete.push(user.referrer);
-        await referringUser.save();
-        await user.save();
+      if (user.coins >= 500 && user.referrer) {
+        const referringUser = await User.findById(user.referrer);
+        if (referringUser && !referringUser.bonusGiven) {
+          referringUser.coins += 100;
+          referringUser.referralCoins += 100;
+          referringUser.bonusGiven = true;
+          await referringUser.save();
+        }
       }
     }
 
@@ -74,11 +76,13 @@ app.post('/update-link', async (req, res) => {
   }
 });
 
+
+
 app.get('/profiles/:userId', async (req, res) => {
   const userId = req.params.userId;
 
   try {
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).populate('referrals', 'name');
     if (!user) {
       return res.status(400).json({ message: 'User not found' });
     }
@@ -87,13 +91,16 @@ app.get('/profiles/:userId', async (req, res) => {
       coins: user.coins || 0,
       linkStatus: user.linkStatus || [],
       userId: user._id,
-      referrals: await User.find({ referrer: user._id }).select('name').lean()
+      referralCoins: user.referralCoins || 0,
+      referrals: user.referrals.map(ref => ({ name: ref.name })),
+      
     });
   } catch (error) {
     console.error('Error:', error);
-    res.status(500).json({ message: 'Failed to fetch user details' });
+    res.status(500).json({ message: 'Failed to get user profile' });
   }
 });
+
 
 app.get('/personal/:userId', async (req, res) => {
   const userId = req.params.userId;
