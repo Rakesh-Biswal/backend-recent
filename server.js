@@ -36,7 +36,7 @@ app.use(requestIp.mw());
 // Registration endpoint
 app.post('/register', async (req, res) => {
   try {
-    const { name, phone, email, password,ip, linkStatus, referralId } = req.body;
+    const { name, phone, email, password, ip, linkStatus, referralId } = req.body;
 
     const existingUser = await User.findOne({
       $or: [{ email }, { phone }, { ip }]
@@ -121,12 +121,13 @@ app.post('/update-link', async (req, res) => {
         }
       }
 
-      if (user.coins >= 500 && user.referrer) {
+      if (user.coins >= 500 && user.referrer && !user.bonusGiven) {
         const referringUser = await User.findById(user.referrer);
-        if (referringUser && !referringUser.bonusGiven) {
+        if (referringUser) {
           referringUser.coins += 100;
           referringUser.referralCoins += 100;
-          referringUser.bonusGiven = true;
+          user.bonusGiven = true;
+          await user.save();
           await referringUser.save();
         }
       }
