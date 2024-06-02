@@ -35,23 +35,20 @@ app.use(requestIp.mw());
 
 // Registration endpoint
 app.post('/register', async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
-    const { name, phone, email, password, linkStatus, referralId } = req.body;
-    const ip = req.clientIp;
+    const { name, phone, email, password, ip, linkStatus, referralId } = req.body;
 
     const existingUser = await User.findOne({
       $or: [{ email }, { phone }, { ip }]
-    }).session(session);
+    });
 
     if (existingUser) {
       if (existingUser.email === email) {
         return res.status(400).json({ message: 'Email already exists' });
       } else if (existingUser.phone === phone) {
         return res.status(400).json({ message: 'Mobile number already exists' });
-      } else {
+      }
+      else {
         return res.status(400).json({ message: 'Already registered on this device/Network' });
       }
     }
@@ -67,17 +64,10 @@ app.post('/register', async (req, res) => {
       referrer: referralId || null
     });
 
-    await newUser.save({ session });
-
-    // Commit the transaction
-    await session.commitTransaction();
-    session.endSession();
+    await newUser.save();
 
     res.json({ message: 'Registration successful' });
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-
     console.error('Error during registration:', error);
     if (error.code === 11000) {
       res.status(400).json({ message: 'Duplicate key error' });
@@ -86,7 +76,6 @@ app.post('/register', async (req, res) => {
     }
   }
 });
-
 
 // Login endpoint
 app.post('/login', async (req, res) => {
