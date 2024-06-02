@@ -11,7 +11,6 @@ const userSchema = new mongoose.Schema({
     referrer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     referralId: { type: String, unique: true, index: true },
     referrals: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-    bonusGiven: { type: Boolean, default: false }, // Field to track if bonus is given
     referralCoins: { type: Number, default: 0 } // Field to track referral coins separately
 });
 
