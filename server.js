@@ -132,16 +132,6 @@ app.post('/update-link', async (req, res) => {
         }
       }
 
-      if (user.coins >= 500 && user.referrer && !user.bonusGiven) {
-        const referringUser = await User.findById(user.referrer);
-        if (referringUser) {
-          referringUser.coins += 100;
-          referringUser.referralCoins += 100;
-          user.bonusGiven = true;
-          await user.save();
-          await referringUser.save();
-        }
-      }
     }
 
     res.json({ message: 'Link updated successfully', user });
