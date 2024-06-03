@@ -35,8 +35,7 @@ app.use(requestIp.mw());
 
 // Registration endpoint
 app.post('/register', async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  
 
   try {
     const { name, phone, email, password, linkStatus, referralId } = req.body;
@@ -44,7 +43,7 @@ app.post('/register', async (req, res) => {
 
     const existingUser = await User.findOne({
       $or: [{ email }, { phone }, { ip }]
-    }).session(session);
+    })
 
     if (existingUser) {
       if (existingUser.email === email) {
@@ -67,16 +66,11 @@ app.post('/register', async (req, res) => {
       referrer: referralId || null
     });
 
-    await newUser.save({ session });
+    await newUser.save();
 
-    // Commit the transaction
-    await session.commitTransaction();
-    session.endSession();
 
     res.json({ message: 'Registration successful' });
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
 
     console.error('Error during registration:', error);
     if (error.code === 11000) {
