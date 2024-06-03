@@ -38,7 +38,7 @@ app.post('/register', async (req, res) => {
   
 
   try {
-    const { name, phone, email, password, linkStatus, referralId } = req.body;
+    const { name, phone, email, password, linkStatus} = req.body;
     const ip = req.clientIp;
 
     const existingUser = await User.findOne({
@@ -63,7 +63,7 @@ app.post('/register', async (req, res) => {
       ip,
       coins: 0,
       linkStatus,
-      referrer: referralId || null
+      // referrer: referralId || null
     });
 
     await newUser.save();
