@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const { Mutex } = require('async-mutex');
 const requestIp = require('request-ip');
 const User = require('./models/User'); // Adjust the path if necessary
 const Payment = require('./models/Payment'); // Ensure this model is correctly defined
@@ -34,16 +35,20 @@ app.use(express.json());
 app.use(requestIp.mw());
 
 // Registration endpoint
+
+const registrationMutex = new Mutex();
+
 app.post('/register', async (req, res) => {
-  
+  const release = await registrationMutex.acquire();
 
   try {
-    const { name, phone, email, password, linkStatus} = req.body;
+    const { name, phone, email, password, linkStatus, referralId } = req.body;
     const ip = req.clientIp;
 
+    // Check if user already exists
     const existingUser = await User.findOne({
       $or: [{ email }, { phone }, { ip }]
-    })
+    });
 
     if (existingUser) {
       if (existingUser.email === email) {
@@ -55,6 +60,7 @@ app.post('/register', async (req, res) => {
       }
     }
 
+    // Create new user
     const newUser = new User({
       name,
       phone,
@@ -63,23 +69,24 @@ app.post('/register', async (req, res) => {
       ip,
       coins: 0,
       linkStatus,
-      // referrer: referralId || null
+      referrer: referralId || null
     });
 
     await newUser.save();
 
-
     res.json({ message: 'Registration successful' });
   } catch (error) {
-
     console.error('Error during registration:', error);
     if (error.code === 11000) {
       res.status(400).json({ message: 'Duplicate key error' });
     } else {
       res.status(500).json({ message: 'Registration failed' });
     }
+  } finally {
+    release();
   }
 });
+
 
 
 // Login endpoint
@@ -101,10 +108,15 @@ app.post('/login', async (req, res) => {
 });
 
 // Update link endpoint
+
+const linkUpdateMutex = new Mutex();
+
 app.post('/update-link', async (req, res) => {
-  const { userId, linkIndex } = req.body;
+  const release = await linkUpdateMutex.acquire();
 
   try {
+    const { userId, linkIndex } = req.body;
+
     const user = await User.findById(userId);
     if (!user) {
       return res.status(400).json({ message: 'User not found' });
@@ -113,27 +125,30 @@ app.post('/update-link', async (req, res) => {
     if (!user.linkStatus[linkIndex]) {
       user.linkStatus[linkIndex] = true;
       user.coins += 10;
+
+      const visitedLinks = user.linkStatus.filter(status => status).length;
+      if (visitedLinks >= 4 && user.referrer) {
+        const referringUser = await User.findById(user.referrer);
+        if (referringUser) {
+          referringUser.coins += 50;
+          referringUser.referralCoins += 50;
+          referringUser.referrals.push(user._id);
+          await referringUser.save();
+        }
+      }
+
       await user.save();
-
-      // const visitedLinks = user.linkStatus.filter(status => status).length;
-      // if (visitedLinks >= 4 && user.referrer) {
-      //   const referringUser = await User.findById(user.referrer);
-      //   if (referringUser) {
-      //     referringUser.coins += 50;
-      //     referringUser.referralCoins += 50;
-      //     referringUser.referrals.push(user._id);
-      //     await referringUser.save();
-      //   }
-      // }
-
     }
 
     res.json({ message: 'Link updated successfully', user });
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ message: 'Failed to update link' });
+  } finally {
+    release();
   }
 });
+
 
 // Profiles endpoint
 app.get('/profiles/:userId', async (req, res) => {
@@ -149,8 +164,8 @@ app.get('/profiles/:userId', async (req, res) => {
       coins: user.coins || 0,
       linkStatus: user.linkStatus || [],
       userId: user._id,
-      // referralCoins: user.referralCoins || 0,
-      // referrals: user.referrals.map(ref => ({ name: ref.name })),
+      referralCoins: user.referralCoins || 0,
+      referrals: user.referrals.map(ref => ({ name: ref.name })),
     });
   } catch (error) {
     console.error('Error:', error);

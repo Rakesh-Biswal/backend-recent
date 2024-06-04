@@ -7,11 +7,11 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: true },
     ip: { type: String, required: true, unique: true, index: true },
     coins: { type: Number, default: 0 },
-    linkStatus: [{ type: Boolean, default: false }],
+    linkStatus: { type: [Boolean], default: [] },
     referrer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     referralId: { type: String, unique: true, index: true },
     referrals: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-    referralCoins: { type: Number, default: 0 } // Field to track referral coins separately
+    referralCoins: { type: Number, default: 0 }
 });
 
 // Ensure indexes are created
