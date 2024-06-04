@@ -42,7 +42,7 @@ app.post('/register', async (req, res) => {
   const release = await registrationMutex.acquire();
 
   try {
-    const { name, phone, email, password, linkStatus, referralId } = req.body;
+    const { name, phone, email, password, linkStatus} = req.body;
     const ip = req.clientIp;
 
     // Check if user already exists
@@ -69,7 +69,7 @@ app.post('/register', async (req, res) => {
       ip,
       coins: 0,
       linkStatus,
-      referrer: referralId || null
+      // referrer: referralId || null
     });
 
     await newUser.save();
@@ -126,16 +126,16 @@ app.post('/update-link', async (req, res) => {
       user.linkStatus[linkIndex] = true;
       user.coins += 10;
 
-      const visitedLinks = user.linkStatus.filter(status => status).length;
-      if (visitedLinks >= 4 && user.referrer) {
-        const referringUser = await User.findById(user.referrer);
-        if (referringUser) {
-          referringUser.coins += 50;
-          referringUser.referralCoins += 50;
-          referringUser.referrals.push(user._id);
-          await referringUser.save();
-        }
-      }
+      // const visitedLinks = user.linkStatus.filter(status => status).length;
+      // if (visitedLinks >= 4 && user.referrer) {
+      //   const referringUser = await User.findById(user.referrer);
+      //   if (referringUser) {
+      //     referringUser.coins += 50;
+      //     referringUser.referralCoins += 50;
+      //     referringUser.referrals.push(user._id);
+      //     await referringUser.save();
+      //   }
+      // }
 
       await user.save();
     }
@@ -164,8 +164,8 @@ app.get('/profiles/:userId', async (req, res) => {
       coins: user.coins || 0,
       linkStatus: user.linkStatus || [],
       userId: user._id,
-      referralCoins: user.referralCoins || 0,
-      referrals: user.referrals.map(ref => ({ name: ref.name })),
+      // referralCoins: user.referralCoins || 0,
+      // referrals: user.referrals.map(ref => ({ name: ref.name })),
     });
   } catch (error) {
     console.error('Error:', error);
