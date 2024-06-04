@@ -114,22 +114,19 @@ app.post('/update-link', async (req, res) => {
       user.coins += 10;
       await user.save();
 
-      async function handleReferral(user) {
-        try {
-          const visitedLinks = user.linkStatus.filter(status => status).length;
-          if (visitedLinks >= 4 && user.referrer) {
-            const referringUser = await User.findById(user.referrer);
-            if (referringUser) {
-              referringUser.coins += 50;
-              referringUser.referralCoins += 50;
-              referringUser.referrals.push(user._id);
-              await referringUser.save();
-            }
-          }
-        } catch (error) {
-          console.error('Error handling referral:', error);
+
+      const visitedLinks = user.linkStatus.filter(status => status).length;
+      if (visitedLinks >= 4 && user.referrer) {
+        const referringUser = await User.findById(user.referrer);
+        if (referringUser) {
+          referringUser.coins += 50;
+          referringUser.referralCoins += 50;
+          referringUser.referrals.push(user._id);
+          await referringUser.save();
         }
+
       }
+
     }
 
     res.json({ message: 'Link updated successfully', user });
