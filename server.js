@@ -36,7 +36,6 @@ app.use(requestIp.mw());
 // Registration endpoint
 app.post('/register', async (req, res) => {
 
-
   try {
     const { name, phone, email, password, ip, linkStatus, referralId } = req.body;
 
@@ -118,7 +117,7 @@ app.post('/update-link', async (req, res) => {
       const visitedLinks = user.linkStatus.filter(status => status).length;
       if (visitedLinks >= 4 && user.referrer) {
         const referringUser = await User.findById(user.referrer);
-        if (referringUser) {
+        if (referringUser && !referringUser.referrals.includes(user._id)) {
           referringUser.coins += 50;
           referringUser.referralCoins += 50;
           referringUser.referrals.push(user._id);

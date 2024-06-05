@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema({
     linkStatus: { type: [Boolean], default: [] },
     referrer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     referralId: { type: String, unique: true, index: true },
-    referrals: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    referrals: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: true }],
     referralCoins: { type: Number, default: 0 }
 });
 
