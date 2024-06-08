@@ -179,6 +179,20 @@ app.get('/personal/:userId', async (req, res) => {
   }
 });
 
+
+app.get('/orders/:userId', async (req, res) => {
+  const userId = req.params.userId;
+
+  try {
+    const payments = await Payment.find({ userId }).sort({ createdAt: -1 });
+    res.json(payments);
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    res.status(500).json({ message: 'Failed to fetch orders' });
+  }
+});
+
+
 // Remains Coin endpoint
 app.post('/RemainsCoin/:userId', async (req, res) => {
   const { withdrawCoin, UpiId, checkPassword } = req.body;
@@ -219,6 +233,26 @@ app.post('/RemainsCoin/:userId', async (req, res) => {
     res.status(500).json({ message: 'Failed to process withdrawal' });
   }
 });
+
+app.post('/update-payment-status', async (req, res) => {
+  const { paymentId, status } = req.body;
+
+  try {
+    const payment = await Payment.findById(paymentId);
+    if (!payment) {
+      return res.status(400).json({ message: 'Payment not found' });
+    }
+
+    payment.status = status;
+    await payment.save();
+
+    res.json({ message: 'Payment status updated successfully' });
+  } catch (error) {
+    console.error('Error updating payment status:', error);
+    res.status(500).json({ message: 'Failed to update payment status' });
+  }
+});
+
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
