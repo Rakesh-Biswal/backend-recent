@@ -267,10 +267,10 @@ app.post('/RemainsCoin/:userId', async (req, res) => {
     if (!user.otp || user.otpExpires < Date.now()) {
       return res.status(400).json({ message: 'OTP expired or invalid' });
     }
-    if (otp !== user.otp) {
+    if (user.otp !== otp) {
       return res.status(400).json({ message: 'Incorrect OTP' });
     }
-    if (checkPassword !== user.password) {
+    if (user.password !== checkPassword) {
       return res.status(400).json({ message: 'Incorrect password' });
     }
     if (withdrawCoin <= 0) {
@@ -279,6 +279,7 @@ app.post('/RemainsCoin/:userId', async (req, res) => {
     if (user.coins < withdrawCoin) {
       return res.status(400).json({ message: 'Insufficient coins' });
     }
+
     user.coins -= withdrawCoin;
 
     const newPayment = new Payment({
@@ -288,6 +289,11 @@ app.post('/RemainsCoin/:userId', async (req, res) => {
     });
 
     await newPayment.save();
+    await user.save();
+
+    // Clear OTP fields after successful withdrawal
+    user.otp = undefined;
+    user.otpExpires = undefined;
     await user.save();
 
     res.json({ message: 'Withdrawal successful', remainingCoins: user.coins });
