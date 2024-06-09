@@ -208,7 +208,7 @@ app.post('/RemainsCoin/:userId', async (req, res) => {
 
     const Name = user.name;
 
-    const newPayment = new Payment({ Name, withdrawCoin, UpiId });
+    const newPayment = new Payment({ Name, withdrawCoin, UpiId,userId });
     await newPayment.save();
 
     const RemainCoin = TotalCoin - withdrawCoin;
