@@ -188,9 +188,8 @@ app.get('/personal/:userId', async (req, res) => {
   }
 });
 
-// Remains Coin endpoint with OTP sending via email
-app.post('/RemainsCoin/:userId', async (req, res) => {
-  const { withdrawCoin, UpiId, checkPassword } = req.body;
+// Request OTP endpoint
+app.post('/request-otp/:userId', async (req, res) => {
   const userId = req.params.userId;
 
   try {
@@ -198,18 +197,6 @@ app.post('/RemainsCoin/:userId', async (req, res) => {
 
     if (!user) {
       return res.status(400).json({ message: 'User not found' });
-    }
-    const TotalCoin = user.coins;
-
-    if (withdrawCoin > TotalCoin) {
-      return res.status(400).json({ message: 'Coin is not available' });
-    }
-    if (checkPassword !== user.password) {
-      return res.status(400).json({ message: 'Password Is Invalid' });
-    }
-
-    if (withdrawCoin < 500) {
-      return res.status(400).json({ message: 'Minimum withdraw Amount = 500' });
     }
 
     const otp = generateOtp();
@@ -220,8 +207,8 @@ app.post('/RemainsCoin/:userId', async (req, res) => {
     const mailOptions = {
       from: process.env.GMAIL_USER,
       to: user.email,
-      subject: 'OTP for Withdrawal',
-      text: `Your OTP for withdrawal is ${otp}`
+      subject: 'Your OTP Code',
+      text: `Your OTP code is ${otp}. It will expire in 5 minutes.`
     };
 
     transporter.sendMail(mailOptions, (error, info) => {
@@ -235,7 +222,7 @@ app.post('/RemainsCoin/:userId', async (req, res) => {
     });
   } catch (error) {
     console.error('Error:', error);
-    res.status(500).json({ message: 'Failed to process withdrawal' });
+    res.status(500).json({ message: 'Failed to generate OTP' });
   }
 });
 
@@ -268,6 +255,55 @@ app.post('/verify-otp/:userId', async (req, res) => {
   }
 });
 
+// Remains Coin endpoint
+app.post('/RemainsCoin/:userId', async (req, res) => {
+  const { withdrawCoin, UpiId, checkPassword } = req.body;
+  const userId = req.params.userId;
+
+  try {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(400).json({ message: 'User not found' });
+    }
+    const TotalCoin = user.coins;
+
+    if (withdrawCoin > TotalCoin) {
+      return res.status(400).json({ message: 'Coin is not available' });
+    }
+    if (checkPassword !== user.password) {
+      return res.status(400).json({ message: 'Password Is Invalid' });
+    }
+
+    if (withdrawCoin < 500) {
+      return res.status(400).json({ message: 'Minimum withdraw Amount = 500' });
+    }
+
+    // After successful OTP verification, process the withdrawal
+    // Here, add your logic for processing the withdrawal (e.g., interacting with a payment API)
+
+    // For example purposes, assuming withdrawal is successful
+    user.coins -= withdrawCoin;
+    await user.save();
+
+    // Record the payment in the Payment model
+    const newPayment = new Payment({
+      userId: user._id,
+      amount: withdrawCoin,
+      upiId: UpiId,
+      status: 'completed' // Update as per your logic
+    });
+
+    await newPayment.save();
+
+    res.json({ message: 'Withdrawal successful', newBalance: user.coins });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: 'Failed to process withdrawal' });
+  }
+});
+
+// Withdrawal history endpoint
 app.get('/withdrawal-history/:userId', async (req, res) => {
   const userId = req.params.userId;
 
