@@ -5,8 +5,8 @@ const cors = require('cors');
 const requestIp = require('request-ip');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
-const User = require('./models/User'); // Adjust the path if necessary
-const Payment = require('./models/Payment'); // Ensure this model is correctly defined
+const User = require('./models/User');
+const Payment = require('./models/Payment');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,7 +31,6 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
-
 app.use(express.json());
 app.use(requestIp.mw());
 
@@ -46,7 +45,7 @@ const transporter = nodemailer.createTransport({
 
 // Function to generate OTP
 const generateOtp = () => {
-  return crypto.randomBytes(3).toString('hex');
+  return crypto.randomBytes(3).toString('hex'); // Generates a 6-character hex OTP
 };
 
 // Registration endpoint
@@ -225,7 +224,6 @@ app.post('/request-otp/:userId', async (req, res) => {
   }
 });
 
-
 // Verify OTP endpoint
 app.post('/verify-otp/:userId', async (req, res) => {
   const { otp } = req.body;
@@ -256,8 +254,6 @@ app.post('/verify-otp/:userId', async (req, res) => {
   }
 });
 
-
-
 app.post('/RemainsCoin/:userId', async (req, res) => {
   const { withdrawCoin, UpiId, checkPassword, otp } = req.body;
   const userId = req.params.userId;
@@ -275,36 +271,31 @@ app.post('/RemainsCoin/:userId', async (req, res) => {
       return res.status(400).json({ message: 'Incorrect OTP' });
     }
     if (checkPassword !== user.password) {
-      return res.status(400).json({ message: 'Password is invalid' });
+      return res.status(400).json({ message: 'Incorrect password' });
     }
-    if (withdrawCoin > user.coins) {
+    if (withdrawCoin <= 0) {
+      return res.status(400).json({ message: 'Withdrawal amount must be greater than zero' });
+    }
+    if (user.coins < withdrawCoin) {
       return res.status(400).json({ message: 'Insufficient coins' });
     }
-    if (withdrawCoin < 500) {
-      return res.status(400).json({ message: 'Minimum withdrawal amount is 500' });
-    }
-
     user.coins -= withdrawCoin;
-    user.otp = undefined;
-    user.otpExpires = undefined;
-    await user.save();
 
     const newPayment = new Payment({
-      userId: user._id,
-      amount: withdrawCoin,
-      upiId: UpiId,
-      status: 'completed'
+      user: user._id,
+      coins: withdrawCoin,
+      upiId: UpiId
     });
 
     await newPayment.save();
+    await user.save();
 
-    res.json({ message: 'Withdrawal successful', newBalance: user.coins });
+    res.json({ message: 'Withdrawal successful', remainingCoins: user.coins });
   } catch (error) {
-    console.error('Error processing withdrawal:', error);
-    res.status(500).json({ message: 'Failed to process withdrawal' });
+    console.error('Error during withdrawal:', error);
+    res.status(500).json({ message: 'Withdrawal failed' });
   }
 });
-
 
 
 // Withdrawal history endpoint
