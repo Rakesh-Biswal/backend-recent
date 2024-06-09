@@ -194,7 +194,6 @@ app.post('/request-otp/:userId', async (req, res) => {
 
   try {
     const user = await User.findById(userId);
-
     if (!user) {
       return res.status(400).json({ message: 'User not found' });
     }
@@ -207,8 +206,8 @@ app.post('/request-otp/:userId', async (req, res) => {
     const mailOptions = {
       from: process.env.GMAIL_USER,
       to: user.email,
-      subject: 'Your OTP Code',
-      text: `Your OTP code is ${otp}. It will expire in 5 minutes.`
+      subject: 'OTP for Withdrawal',
+      text: `Your OTP for withdrawal is ${otp}`
     };
 
     transporter.sendMail(mailOptions, (error, info) => {
@@ -222,9 +221,10 @@ app.post('/request-otp/:userId', async (req, res) => {
     });
   } catch (error) {
     console.error('Error:', error);
-    res.status(500).json({ message: 'Failed to generate OTP' });
+    res.status(500).json({ message: 'Failed to request OTP' });
   }
 });
+
 
 // Verify OTP endpoint
 app.post('/verify-otp/:userId', async (req, res) => {
@@ -256,55 +256,41 @@ app.post('/verify-otp/:userId', async (req, res) => {
 });
 
 app.post('/RemainsCoin/:userId', async (req, res) => {
-  const { withdrawCoin, UpiId, checkPassword } = req.body;
+  const { withdrawCoin, UpiId, checkPassword, otp } = req.body;
   const userId = req.params.userId;
 
   try {
     const user = await User.findById(userId);
 
     if (!user) {
-      console.error('User not found');
       return res.status(400).json({ message: 'User not found' });
     }
-
-    const TotalCoin = user.coins;
-
-    if (withdrawCoin > TotalCoin) {
-      console.error('Requested withdrawal amount exceeds available coins');
-      return res.status(400).json({ message: 'Coin is not available' });
-    }
-    if (checkPassword !== user.password) {
-      console.error('Invalid password');
-      return res.status(400).json({ message: 'Password is invalid' });
-    }
-
-    if (withdrawCoin < 500) {
-      console.error('Withdrawal amount less than minimum required');
-      return res.status(400).json({ message: 'Minimum withdraw amount is 500' });
-    }
-
-    // Verify OTP
     if (!user.otp || user.otpExpires < Date.now()) {
-      console.error('OTP expired or invalid');
       return res.status(400).json({ message: 'OTP expired or invalid' });
     }
-    if (req.body.otp !== user.otp) {
-      console.error('Incorrect OTP');
+    if (otp !== user.otp) {
       return res.status(400).json({ message: 'Incorrect OTP' });
     }
+    if (checkPassword !== user.password) {
+      return res.status(400).json({ message: 'Password is invalid' });
+    }
+    if (withdrawCoin > user.coins) {
+      return res.status(400).json({ message: 'Insufficient coins' });
+    }
+    if (withdrawCoin < 500) {
+      return res.status(400).json({ message: 'Minimum withdrawal amount is 500' });
+    }
 
-    // OTP verification passed, process the withdrawal
     user.coins -= withdrawCoin;
     user.otp = undefined;
     user.otpExpires = undefined;
     await user.save();
 
-    // Record the payment in the Payment model
     const newPayment = new Payment({
       userId: user._id,
       amount: withdrawCoin,
       upiId: UpiId,
-      status: 'completed' // Update as per your logic
+      status: 'completed'
     });
 
     await newPayment.save();
@@ -315,6 +301,7 @@ app.post('/RemainsCoin/:userId', async (req, res) => {
     res.status(500).json({ message: 'Failed to process withdrawal' });
   }
 });
+
 
 
 // Withdrawal history endpoint
