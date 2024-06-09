@@ -3,6 +3,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const requestIp = require('request-ip');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const User = require('./models/User'); // Adjust the path if necessary
 const Payment = require('./models/Payment'); // Ensure this model is correctly defined
 
@@ -33,15 +35,28 @@ app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(requestIp.mw());
 
+// Configure Nodemailer
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS
+  }
+});
+
+// Function to generate OTP
+const generateOtp = () => {
+  return crypto.randomBytes(3).toString('hex');
+};
+
 // Registration endpoint
 app.post('/register', async (req, res) => {
-
   try {
     const { name, phone, email, password, ip, linkStatus, referralId } = req.body;
 
     const existingUser = await User.findOne({
       $or: [{ email }, { phone }, { ip }]
-    })
+    });
 
     if (existingUser) {
       if (existingUser.email === email) {
@@ -66,10 +81,8 @@ app.post('/register', async (req, res) => {
 
     await newUser.save();
 
-
     res.json({ message: 'Registration successful' });
   } catch (error) {
-
     console.error('Error during registration:', error);
     if (error.code === 11000) {
       res.status(400).json({ message: 'Duplicate key error' });
@@ -78,7 +91,6 @@ app.post('/register', async (req, res) => {
     }
   }
 });
-
 
 // Login endpoint
 app.post('/login', async (req, res) => {
@@ -113,7 +125,6 @@ app.post('/update-link', async (req, res) => {
       user.coins += 10;
       await user.save();
 
-
       const visitedLinks = user.linkStatus.filter(status => status).length;
       if (visitedLinks >= 4 && user.referrer) {
         const referringUser = await User.findById(user.referrer);
@@ -123,9 +134,7 @@ app.post('/update-link', async (req, res) => {
           referringUser.referrals.push(user._id);
           await referringUser.save();
         }
-
       }
-
     }
 
     res.json({ message: 'Link updated successfully', user });
@@ -179,10 +188,7 @@ app.get('/personal/:userId', async (req, res) => {
   }
 });
 
-
-
-
-// Remains Coin endpoint
+// Remains Coin endpoint with OTP sending via email
 app.post('/RemainsCoin/:userId', async (req, res) => {
   const { withdrawCoin, UpiId, checkPassword } = req.body;
   const userId = req.params.userId;
@@ -203,23 +209,62 @@ app.post('/RemainsCoin/:userId', async (req, res) => {
     }
 
     if (withdrawCoin < 500) {
-      return res.status(400).json({ message: 'Minimum withDraw Amount = 500' });
+      return res.status(400).json({ message: 'Minimum withdraw Amount = 500' });
     }
 
-    const Name = user.name;
-
-    const newPayment = new Payment({ Name, withdrawCoin, UpiId,userId });
-    await newPayment.save();
-
-    const RemainCoin = TotalCoin - withdrawCoin;
-
-    user.coins = RemainCoin;
+    const otp = generateOtp();
+    user.otp = otp;
+    user.otpExpires = Date.now() + 300000; // OTP expires in 5 minutes
     await user.save();
 
-    res.json({ message: 'Withdrawal successful', user });
+    const mailOptions = {
+      from: process.env.GMAIL_USER,
+      to: user.email,
+      subject: 'OTP for Withdrawal',
+      text: `Your OTP for withdrawal is ${otp}`
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error('Error sending OTP email:', error);
+        return res.status(500).json({ message: 'Failed to send OTP email' });
+      } else {
+        console.log('OTP email sent:', info.response);
+        res.json({ message: 'OTP sent to email' });
+      }
+    });
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ message: 'Failed to process withdrawal' });
+  }
+});
+
+// Verify OTP endpoint
+app.post('/verify-otp/:userId', async (req, res) => {
+  const { otp } = req.body;
+  const userId = req.params.userId;
+
+  try {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(400).json({ message: 'User not found' });
+    }
+    if (!user.otp || user.otpExpires < Date.now()) {
+      return res.status(400).json({ message: 'OTP expired or invalid' });
+    }
+    if (user.otp !== otp) {
+      return res.status(400).json({ message: 'Incorrect OTP' });
+    }
+
+    user.otp = undefined;
+    user.otpExpires = undefined;
+    await user.save();
+
+    res.json({ message: 'OTP verified successfully' });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: 'Failed to verify OTP' });
   }
 });
 
@@ -239,8 +284,6 @@ app.get('/withdrawal-history/:userId', async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch withdrawal history' });
   }
 });
-
-
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
