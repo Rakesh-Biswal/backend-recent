@@ -255,7 +255,6 @@ app.post('/verify-otp/:userId', async (req, res) => {
   }
 });
 
-// Remains Coin endpoint
 app.post('/RemainsCoin/:userId', async (req, res) => {
   const { withdrawCoin, UpiId, checkPassword } = req.body;
   const userId = req.params.userId;
@@ -264,26 +263,40 @@ app.post('/RemainsCoin/:userId', async (req, res) => {
     const user = await User.findById(userId);
 
     if (!user) {
+      console.error('User not found');
       return res.status(400).json({ message: 'User not found' });
     }
+
     const TotalCoin = user.coins;
 
     if (withdrawCoin > TotalCoin) {
+      console.error('Requested withdrawal amount exceeds available coins');
       return res.status(400).json({ message: 'Coin is not available' });
     }
     if (checkPassword !== user.password) {
-      return res.status(400).json({ message: 'Password Is Invalid' });
+      console.error('Invalid password');
+      return res.status(400).json({ message: 'Password is invalid' });
     }
 
     if (withdrawCoin < 500) {
-      return res.status(400).json({ message: 'Minimum withdraw Amount = 500' });
+      console.error('Withdrawal amount less than minimum required');
+      return res.status(400).json({ message: 'Minimum withdraw amount is 500' });
     }
 
-    // After successful OTP verification, process the withdrawal
-    // Here, add your logic for processing the withdrawal (e.g., interacting with a payment API)
+    // Verify OTP
+    if (!user.otp || user.otpExpires < Date.now()) {
+      console.error('OTP expired or invalid');
+      return res.status(400).json({ message: 'OTP expired or invalid' });
+    }
+    if (req.body.otp !== user.otp) {
+      console.error('Incorrect OTP');
+      return res.status(400).json({ message: 'Incorrect OTP' });
+    }
 
-    // For example purposes, assuming withdrawal is successful
+    // OTP verification passed, process the withdrawal
     user.coins -= withdrawCoin;
+    user.otp = undefined;
+    user.otpExpires = undefined;
     await user.save();
 
     // Record the payment in the Payment model
@@ -298,10 +311,11 @@ app.post('/RemainsCoin/:userId', async (req, res) => {
 
     res.json({ message: 'Withdrawal successful', newBalance: user.coins });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error processing withdrawal:', error);
     res.status(500).json({ message: 'Failed to process withdrawal' });
   }
 });
+
 
 // Withdrawal history endpoint
 app.get('/withdrawal-history/:userId', async (req, res) => {
