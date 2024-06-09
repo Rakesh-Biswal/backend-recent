@@ -237,13 +237,16 @@ app.post('/verify-otp/:userId', async (req, res) => {
     if (!user) {
       return res.status(400).json({ message: 'User not found' });
     }
-    if (!user.otp || user.otpExpires < Date.now()) {
+    if (!user.otp || new Date(user.otpExpires) < new Date()) {
+      // Check if OTP doesn't exist or has expired
       return res.status(400).json({ message: 'OTP expired or invalid' });
     }
     if (user.otp !== otp) {
+      // Incorrect OTP
       return res.status(400).json({ message: 'Incorrect OTP' });
     }
 
+    // Clear OTP fields after successful verification
     user.otp = undefined;
     user.otpExpires = undefined;
     await user.save();
@@ -254,6 +257,7 @@ app.post('/verify-otp/:userId', async (req, res) => {
     res.status(500).json({ message: 'Failed to verify OTP' });
   }
 });
+
 
 app.post('/RemainsCoin/:userId', async (req, res) => {
   const { withdrawCoin, UpiId, checkPassword, otp } = req.body;
