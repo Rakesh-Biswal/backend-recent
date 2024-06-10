@@ -1,15 +1,16 @@
-
-require('dotenv').config();
+// Import necessary modules
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const requestIp = require('request-ip');
+const nodemailer = require('nodemailer'); // Import nodemailer for sending emails
 const User = require('./models/User'); // Adjust the path if necessary
 const Payment = require('./models/Payment'); // Ensure this model is correctly defined
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// MongoDB connection
 mongoose
   .connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
@@ -18,6 +19,7 @@ mongoose
   .then(() => console.log('MongoDB connected'))
   .catch((err) => console.log('MongoDB connection error:', err));
 
+// CORS configuration
 const corsOptions = {
   origin: [
     'https://click-and-win.netlify.app',
@@ -31,18 +33,65 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
+// Middleware
 app.use(express.json());
 app.use(requestIp.mw());
 
+// Function to generate OTP
+function generateOTP() {
+  // Generate a 6-digit random number as OTP
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Function to send OTP to user's email
+async function sendOTP(email) {
+  // Generate OTP
+  const otp = generateOTP();
+
+  // Create reusable transporter object using the default SMTP transport
+  let transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: 'rb2306114@gmail.com', // Your Gmail address
+      pass: 'Rinku rakesh' // Your Gmail password
+    }
+  });
+
+  // Email message options
+  let mailOptions = {
+    from: 'rb2306114@gmail.com', // Sender address
+    to: email, // Receiver address
+    subject: 'OTP Verification', // Subject line
+    text: `Your OTP for registration is: ${otp}` // Plain text body
+  };
+
+  // Send email with defined transport object
+  await transporter.sendMail(mailOptions);
+
+  // Return the generated OTP
+  return otp;
+}
+
 // Registration endpoint
 app.post('/register', async (req, res) => {
-
   try {
-    const { name, phone, email, password, ip, linkStatus, referralId } = req.body;
+    const { name, phone, email, password, ip, referralId } = req.body;
 
+    // Verify OTP
+    const userOTP = req.body.otp;
+    if (!userOTP) {
+      return res.status(400).json({ message: 'OTP is required' });
+    }
+    // Check if OTP provided by user matches the generated OTP
+    const otpMatch = await User.findOne({ email, otp: userOTP });
+    if (!otpMatch) {
+      return res.status(400).json({ message: 'Invalid OTP' });
+    }
+
+    // Check if user already exists
     const existingUser = await User.findOne({
       $or: [{ email }, { phone }, { ip }]
-    })
+    });
 
     if (existingUser) {
       if (existingUser.email === email) {
@@ -54,6 +103,7 @@ app.post('/register', async (req, res) => {
       }
     }
 
+    // Create new user
     const newUser = new User({
       name,
       phone,
@@ -61,16 +111,18 @@ app.post('/register', async (req, res) => {
       password,
       ip,
       coins: 0,
-      linkStatus,
-      referrer: referralId || null
+      linkStatus: [],
+      referrer: referralId || null,
+      otp: null // Clear OTP after registration
     });
 
     await newUser.save();
 
+    // Clear OTP after registration
+    await User.findOneAndUpdate({ email }, { otp: null });
 
     res.json({ message: 'Registration successful' });
   } catch (error) {
-
     console.error('Error during registration:', error);
     if (error.code === 11000) {
       res.status(400).json({ message: 'Duplicate key error' });
