@@ -3,22 +3,20 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const requestIp = require('request-ip');
-const nodemailer = require('nodemailer');
-const User = require('./models/User');
-const Payment = require('./models/Payment');
+const User = require('./models/User'); // Adjust the path if necessary
+const Payment = require('./models/Payment'); // Ensure this model is correctly defined
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// MongoDB connection
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log('MongoDB connected'))
-.catch(err => console.log('MongoDB connection error:', err));
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  })
+  .then(() => console.log('MongoDB connected'))
+  .catch((err) => console.log('MongoDB connection error:', err));
 
-// CORS configuration
 const corsOptions = {
   origin: [
     'https://click-and-win.netlify.app',
@@ -32,64 +30,18 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
-// Middleware
 app.use(express.json());
 app.use(requestIp.mw());
 
-// Function to generate OTP
-function generateOTP() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-// Function to send OTP to user's email
-async function sendOTP(email, otp) {
-  let transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD
-    }
-  });
-
-  let mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: 'OTP Verification',
-    text: `Your OTP for registration is: ${otp}`
-  };
-
-  await transporter.sendMail(mailOptions);
-}
-
-// Endpoint to generate and send OTP
-app.post('/generate-otp', async (req, res) => {
-  const { email } = req.body;
-  try {
-    const otp = generateOTP();
-    const otpExpires = Date.now() + 10 * 60 * 1000; // OTP expires in 10 minutes
-    await User.findOneAndUpdate({ email }, { otp, otpExpires }, { upsert: true, new: true });
-    await sendOTP(email, otp);
-    res.json({ message: 'OTP sent successfully' });
-  } catch (error) {
-    console.error('Error sending OTP:', error);
-    res.status(500).json({ message: 'Failed to send OTP' });
-  }
-});
-
 // Registration endpoint
 app.post('/register', async (req, res) => {
+
   try {
-    const { name, phone, email, password, ip, referralId, otp } = req.body;
-
-    const user = await User.findOne({ email });
-
-    if (!user || user.otp !== otp || user.otpExpires < Date.now()) {
-      return res.status(400).json({ message: 'Invalid or expired OTP' });
-    }
+    const { name, phone, email, password, ip, linkStatus, referralId } = req.body;
 
     const existingUser = await User.findOne({
       $or: [{ email }, { phone }, { ip }]
-    });
+    })
 
     if (existingUser) {
       if (existingUser.email === email) {
@@ -101,17 +53,23 @@ app.post('/register', async (req, res) => {
       }
     }
 
-    user.name = name;
-    user.phone = phone;
-    user.password = password;
-    user.ip = ip;
-    user.referrer = referralId || null;
-    user.otp = null;
-    user.otpExpires = null;
+    const newUser = new User({
+      name,
+      phone,
+      email,
+      password,
+      ip,
+      coins: 0,
+      linkStatus,
+      referrer: referralId || null
+    });
 
-    await user.save();
+    await newUser.save();
+
+
     res.json({ message: 'Registration successful' });
   } catch (error) {
+
     console.error('Error during registration:', error);
     if (error.code === 11000) {
       res.status(400).json({ message: 'Duplicate key error' });
@@ -120,6 +78,7 @@ app.post('/register', async (req, res) => {
     }
   }
 });
+
 
 // Login endpoint
 app.post('/login', async (req, res) => {
