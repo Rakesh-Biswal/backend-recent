@@ -11,13 +11,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // MongoDB connection
-mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-  })
-  .then(() => console.log('MongoDB connected'))
-  .catch((err) => console.log('MongoDB connection error:', err));
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => console.log('MongoDB connected'))
+.catch(err => console.log('MongoDB connection error:', err));
 
 // CORS configuration
 const corsOptions = {
@@ -67,8 +66,10 @@ app.post('/generate-otp', async (req, res) => {
   const { email } = req.body;
   try {
     const otp = generateOTP();
+    const otpExpires = Date.now() + 10 * 60 * 1000; // OTP expires in 10 minutes
+    await User.findOneAndUpdate({ email }, { otp, otpExpires }, { upsert: true, new: true });
     await sendOTP(email, otp);
-    res.json({ message: 'OTP sent successfully', otp });
+    res.json({ message: 'OTP sent successfully' });
   } catch (error) {
     console.error('Error sending OTP:', error);
     res.status(500).json({ message: 'Failed to send OTP' });
@@ -80,9 +81,10 @@ app.post('/register', async (req, res) => {
   try {
     const { name, phone, email, password, ip, referralId, otp } = req.body;
 
-    const otpMatch = await User.findOne({ email, otp });
-    if (!otpMatch) {
-      return res.status(400).json({ message: 'Invalid OTP' });
+    const user = await User.findOne({ email });
+
+    if (!user || user.otp !== otp || user.otpExpires < Date.now()) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
 
     const existingUser = await User.findOne({
@@ -99,19 +101,15 @@ app.post('/register', async (req, res) => {
       }
     }
 
-    const newUser = new User({
-      name,
-      phone,
-      email,
-      password,
-      ip,
-      coins: 0,
-      linkStatus: [],
-      referrer: referralId || null,
-      otp: null
-    });
+    user.name = name;
+    user.phone = phone;
+    user.password = password;
+    user.ip = ip;
+    user.referrer = referralId || null;
+    user.otp = null;
+    user.otpExpires = null;
 
-    await newUser.save();
+    await user.save();
     res.json({ message: 'Registration successful' });
   } catch (error) {
     console.error('Error during registration:', error);
@@ -122,7 +120,6 @@ app.post('/register', async (req, res) => {
     }
   }
 });
-
 
 // Login endpoint
 app.post('/login', async (req, res) => {

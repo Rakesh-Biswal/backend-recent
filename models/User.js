@@ -12,7 +12,9 @@ const userSchema = new mongoose.Schema({
     referralId: { type: String, unique: true, index: true },
     referrals: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: true }],
     referralCoins: { type: Number, default: 0 },
-    otp: { type: String } // Adding OTP field
+    otp: { type: String },// Adding OTP field
+    otpExpires: Date,
+    
 });
 
 // Ensure indexes are created
