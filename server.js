@@ -254,6 +254,7 @@ app.post('/verify-otp/:userId', async (req, res) => {
   }
 });
 
+// Withdrawal endpoint
 app.post('/RemainsCoin/:userId', async (req, res) => {
   const { withdrawCoin, UpiId, checkPassword, otp } = req.body;
   const userId = req.params.userId;
@@ -264,7 +265,7 @@ app.post('/RemainsCoin/:userId', async (req, res) => {
     if (!user) {
       return res.status(400).json({ message: 'User not found' });
     }
-    if (!user.otp || user.otpExpires < Date.now()) {
+    if (!user.otp || new Date(user.otpExpires) < new Date()) {
       return res.status(400).json({ message: 'OTP expired or invalid' });
     }
     if (user.otp !== otp) {
@@ -303,13 +304,12 @@ app.post('/RemainsCoin/:userId', async (req, res) => {
   }
 });
 
-
 // Withdrawal history endpoint
 app.get('/withdrawal-history/:userId', async (req, res) => {
   const userId = req.params.userId;
 
   try {
-    const payments = await Payment.find({ userId }).sort({ createdAt: -1 });
+    const payments = await Payment.find({ user: userId }).sort({ createdAt: -1 });
 
     if (!payments) {
       return res.status(400).json({ message: 'No withdrawal history found' });
