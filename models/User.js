@@ -11,9 +11,7 @@ const userSchema = new mongoose.Schema({
     referrer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     referralId: { type: String, unique: true, index: true },
     referrals: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: true }],
-    referralCoins: { type: Number, default: 0 },
-    otp: { type: String }, // Field for storing OTP
-    otpExpires: { type: Date } // Field for OTP expiration time
+    referralCoins: { type: Number, default: 0 }
 });
 
 // Ensure indexes are created
