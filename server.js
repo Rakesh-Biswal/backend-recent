@@ -3,8 +3,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const requestIp = require('request-ip');
-const User = require('./models/User'); // Adjust the path if necessary
+const User = require('./models/User');
 const Payment = require('./models/Payment'); // Ensure this model is correctly defined
+const Link = require('./models/Link'); // Link model to be created
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,7 +13,8 @@ const PORT = process.env.PORT || 3000;
 mongoose
   .connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
-    useUnifiedTopology: true
+    useUnifiedTopology: true,
+    useCreateIndex: true,
   })
   .then(() => console.log('MongoDB connected'))
   .catch((err) => console.log('MongoDB connection error:', err));
@@ -21,10 +23,10 @@ const corsOptions = {
   origin: [
     'https://click-and-win.netlify.app',
     'https://backend-recent-2.onrender.com',
-    'http://localhost:3000'
+    'http://localhost:3000',
   ],
   optionsSuccessStatus: 200,
-  credentials: true
+  credentials: true,
 };
 
 app.use(cors(corsOptions));
@@ -35,13 +37,12 @@ app.use(requestIp.mw());
 
 // Registration endpoint
 app.post('/register', async (req, res) => {
-
   try {
     const { name, phone, email, password, ip, linkStatus, referralId } = req.body;
 
     const existingUser = await User.findOne({
-      $or: [{ email }, { phone }, { ip }]
-    })
+      $or: [{ email }, { phone }, { ip }],
+    });
 
     if (existingUser) {
       if (existingUser.email === email) {
@@ -61,15 +62,13 @@ app.post('/register', async (req, res) => {
       ip,
       coins: 0,
       linkStatus,
-      referrer: referralId || null
+      referrer: referralId || null,
     });
 
     await newUser.save();
 
-
     res.json({ message: 'Registration successful' });
   } catch (error) {
-
     console.error('Error during registration:', error);
     if (error.code === 11000) {
       res.status(400).json({ message: 'Duplicate key error' });
@@ -78,7 +77,6 @@ app.post('/register', async (req, res) => {
     }
   }
 });
-
 
 // Login endpoint
 app.post('/login', async (req, res) => {
@@ -98,10 +96,43 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Update link endpoint
+// Admin login endpoint
+app.post('/admin/login', (req, res) => {
+  const { email, password } = req.body;
+  if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
+    res.json({ message: 'Admin login successful' });
+  } else {
+    res.status(400).json({ message: 'Invalid admin credentials' });
+  }
+});
+
+// Fetch links endpoint
+app.get('/links', async (req, res) => {
+  try {
+    const links = await Link.find();
+    res.json(links);
+  } catch (error) {
+    console.error('Error fetching links:', error);
+    res.status(500).json({ message: 'Failed to fetch links' });
+  }
+});
+
+// Update links endpoint (admin)
+app.post('/links', async (req, res) => {
+  const { links } = req.body;
+  try {
+    await Link.deleteMany(); // Clear existing links
+    await Link.insertMany(links); // Insert new links
+    res.json({ message: 'Links updated successfully' });
+  } catch (error) {
+    console.error('Error updating links:', error);
+    res.status(500).json({ message: 'Failed to update links' });
+  }
+});
+
+// Update link status endpoint (user)
 app.post('/update-link', async (req, res) => {
   const { userId, linkIndex } = req.body;
-
   try {
     const user = await User.findById(userId);
     if (!user) {
@@ -113,8 +144,7 @@ app.post('/update-link', async (req, res) => {
       user.coins += 10;
       await user.save();
 
-
-      const visitedLinks = user.linkStatus.filter(status => status).length;
+      const visitedLinks = user.linkStatus.filter((status) => status).length;
       if (visitedLinks >= 4 && user.referrer) {
         const referringUser = await User.findById(user.referrer);
         if (referringUser && !referringUser.referrals.includes(user._id)) {
@@ -123,14 +153,12 @@ app.post('/update-link', async (req, res) => {
           referringUser.referrals.push(user._id);
           await referringUser.save();
         }
-
       }
-
     }
 
     res.json({ message: 'Link updated successfully', user });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error updating link:', error);
     res.status(500).json({ message: 'Failed to update link' });
   }
 });
@@ -138,7 +166,6 @@ app.post('/update-link', async (req, res) => {
 // Profiles endpoint
 app.get('/profiles/:userId', async (req, res) => {
   const userId = req.params.userId;
-
   try {
     const user = await User.findById(userId).populate('referrals', 'name');
     if (!user) {
@@ -150,18 +177,17 @@ app.get('/profiles/:userId', async (req, res) => {
       linkStatus: user.linkStatus || [],
       userId: user._id,
       referralCoins: user.referralCoins || 0,
-      referrals: user.referrals.map(ref => ({ name: ref.name })),
+      referrals: user.referrals.map((ref) => ({ name: ref.name })),
     });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error fetching user profile:', error);
     res.status(500).json({ message: 'Failed to get user profile' });
   }
 });
 
-// Personal endpoint
+// Personal profile endpoint
 app.get('/personal/:userId', async (req, res) => {
   const userId = req.params.userId;
-
   try {
     const user = await User.findById(userId);
     if (!user) {
@@ -171,14 +197,13 @@ app.get('/personal/:userId', async (req, res) => {
       name: user.name,
       coins: user.coins || 0,
       id: user._id,
-      ip: user.ip
+      ip: user.ip,
     });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error fetching personal profile:', error);
     res.status(500).json({ message: 'Failed to fetch profile details' });
   }
 });
-
 
 // Remains Coin endpoint
 app.post('/RemainsCoin/:userId', async (req, res) => {
@@ -216,13 +241,12 @@ app.post('/RemainsCoin/:userId', async (req, res) => {
 
     res.json({ message: 'Withdrawal successful', user });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error processing withdrawal:', error);
     res.status(500).json({ message: 'Failed to process withdrawal' });
   }
 });
 
-
-
+// Withdrawal history endpoint
 app.get('/withdrawal-history/:userId', async (req, res) => {
   const userId = req.params.userId;
 
@@ -239,7 +263,6 @@ app.get('/withdrawal-history/:userId', async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch withdrawal history' });
   }
 });
-
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
