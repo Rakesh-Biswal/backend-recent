@@ -98,7 +98,7 @@ app.post('/login', async (req, res) => {
 // Admin login endpoint
 app.post('/admin/login', (req, res) => {
   const { email, password } = req.body;
-  if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
+  if (email === "ABR@gmail.com" && password === "abr123") {
     res.json({ message: 'Admin login successful' });
   } else {
     res.status(400).json({ message: 'Invalid admin credentials' });
