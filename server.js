@@ -120,7 +120,6 @@ app.get('/links', async (req, res) => {
 app.post('/links', async (req, res) => {
   const { links } = req.body;
   try {
-    await Link.deleteMany(); // Clear existing links
     await Link.insertMany(links); // Insert new links
     res.json({ message: 'Links updated successfully' });
   } catch (error) {
