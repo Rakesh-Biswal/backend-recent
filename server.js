@@ -38,14 +38,13 @@ app.use(requestIp.mw());
 app.post('/register', async (req, res) => {
   try {
     const { name, phone, email, password, ip, linkStatus, referralId, uniqueIdentifier } = req.body;
-    const clientIp = req.clientIp;
+    
 
     const existingUser = await User.findOne({
       $or: [
         { email },
         { phone },
         { uniqueIdentifier },
-        { ip: clientIp },
         { ip }
       ],
     });
@@ -67,7 +66,7 @@ app.post('/register', async (req, res) => {
       phone,
       email,
       password,
-      ip: clientIp,
+      ip,
       coins: 0,
       linkStatus,
       referrer: referralId || null,

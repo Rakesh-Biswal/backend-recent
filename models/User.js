@@ -12,7 +12,7 @@ const userSchema = new mongoose.Schema({
     referralId: { type: String, unique: true, index: true },
     referrals: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: true }],
     referralCoins: { type: Number, default: 0 },
-    uniqueIdentifier: { type: String, required: true, unique: true, index: true }, // New field for unique identifier
+    uniqueIdentifier: { type: String, required: true, unique: true, index: true }, 
 });
 
 // Ensure indexes are created
