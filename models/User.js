@@ -20,7 +20,6 @@ userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ phone: 1 }, { unique: true });
 userSchema.index({ ip: 1 }, { unique: true });
 userSchema.index({ referralId: 1 }, { unique: true });
-userSchema.index({ uniqueIdentifier: 1 }, { unique: true });
 
 const User = mongoose.model('User', userSchema);
 
