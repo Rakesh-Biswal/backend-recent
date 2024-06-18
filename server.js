@@ -37,10 +37,17 @@ app.use(requestIp.mw());
 // Registration endpoint
 app.post('/register', async (req, res) => {
   try {
-    const { name, phone, email, password, ip, linkStatus, referralId } = req.body;
+    const { name, phone, email, password, ip, linkStatus, referralId, uniqueIdentifier } = req.body;
+    const clientIp = req.clientIp;
 
     const existingUser = await User.findOne({
-      $or: [{ email }, { phone }, { ip }],
+      $or: [
+        { email },
+        { phone },
+        { uniqueIdentifier },
+        { ip: clientIp },
+        { ip }
+      ],
     });
 
     if (existingUser) {
@@ -48,8 +55,10 @@ app.post('/register', async (req, res) => {
         return res.status(400).json({ message: 'Email already exists' });
       } else if (existingUser.phone === phone) {
         return res.status(400).json({ message: 'Mobile number already exists' });
+      } else if (existingUser.uniqueIdentifier === uniqueIdentifier) {
+        return res.status(400).json({ message: 'You have Already registered' });
       } else {
-        return res.status(400).json({ message: 'Already registered on this device/Network' });
+        return res.status(400).json({ message: 'Already registered on this network' });
       }
     }
 
@@ -58,14 +67,14 @@ app.post('/register', async (req, res) => {
       phone,
       email,
       password,
-      ip,
+      ip: clientIp,
       coins: 0,
       linkStatus,
       referrer: referralId || null,
+      uniqueIdentifier
     });
 
     await newUser.save();
-
     res.json({ message: 'Registration successful' });
   } catch (error) {
     console.error('Error during registration:', error);
