@@ -153,12 +153,10 @@ app.post('/update-link', async (req, res) => {
       await user.save();
 
       // Update link click statistics
-      const today = new Date().setHours(0, 0, 0, 0);
-      let stats = await Statistics.findOne({ date: today });
+      let stats = await Statistics.findOne();
       if (!stats) {
-        stats = new Statistics();
+        stats.linkClicksToday++;
       }
-      stats.linkClicksToday++;
       await stats.save();
 
       const visitedLinks = user.linkStatus.filter((status) => status).length;
