@@ -6,6 +6,7 @@ const requestIp = require('request-ip');
 const User = require('./models/User');
 const Payment = require('./models/Payment'); // Ensure this model is correctly defined
 const Link = require('./models/Link'); // Link model to be created
+const Statistics = require('./models/Statistics');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -151,6 +152,15 @@ app.post('/update-link', async (req, res) => {
       user.coins += 10;
       await user.save();
 
+      // Update link click statistics
+      const today = new Date().setHours(0, 0, 0, 0);
+      let stats = await Statistics.findOne({ date: today });
+      if (!stats) {
+        stats = new Statistics();
+      }
+      stats.linkClicksToday++;
+      await stats.save();
+
       const visitedLinks = user.linkStatus.filter((status) => status).length;
       if (visitedLinks >= 4 && user.referrer) {
         const referringUser = await User.findById(user.referrer);
@@ -169,6 +179,35 @@ app.post('/update-link', async (req, res) => {
     res.status(500).json({ message: 'Failed to update link' });
   }
 });
+
+
+
+app.get('/statistics', async (req, res) => {
+  try {
+    const today = new Date().setHours(0, 0, 0, 0);
+    let stats = await Statistics.findOne({ date: today });
+    if (!stats) {
+      stats = new Statistics();
+    }
+
+    // Calculate total number of registered users
+    const totalUsers = await User.countDocuments();
+
+    res.json({
+      linkClicksToday: stats.linkClicksToday || 0,
+      date: stats.date,
+      totalUsers: totalUsers,
+    });
+  } catch (error) {
+    console.error('Error fetching statistics:', error);
+    res.status(500).json({ message: 'Failed to fetch statistics' });
+  }
+});
+
+
+
+
+
 
 // Profiles endpoint
 app.get('/profiles/:userId', async (req, res) => {
