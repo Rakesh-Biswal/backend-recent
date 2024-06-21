@@ -182,18 +182,12 @@ app.post('/update-link', async (req, res) => {
 
 app.get('/statistics', async (req, res) => {
   try {
-    const today = new Date().setHours(0, 0, 0, 0);
-    let stats = await Statistics.findOne({ date: today });
-    if (!stats) {
-      stats = new Statistics();
-    }
-
-    // Calculate total number of registered users
+    
+    let stats = await Statistics.findOne();
     const totalUsers = await User.countDocuments();
 
     res.json({
-      linkClicksToday: stats.linkClicksToday || 0,
-      date: stats.date,
+      linkClicksToday: stats.linkClicksToday,
       totalUsers: totalUsers,
     });
   } catch (error) {

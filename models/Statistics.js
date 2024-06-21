@@ -2,11 +2,7 @@ const mongoose = require('mongoose');
 
 // Define schema for Statistics
 const statisticsSchema = new mongoose.Schema({
-    date: {
-        type: Date,
-        required: true,
-        default: Date.now
-    },
+    
     linkClicksToday: {
         type: Number,
         default: 0
