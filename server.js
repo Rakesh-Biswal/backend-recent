@@ -231,11 +231,16 @@ app.get('/personal/:userId', async (req, res) => {
     if (!user) {
       return res.status(400).json({ message: 'User not found' });
     }
+    const totalReferrals = user.referrals.length;
+    const totalUnvisitedLinks = user.linkStatus.filter(status => !status).length;
+
     res.json({
       name: user.name,
       coins: user.coins || 0,
       id: user._id,
       ip: user.ip,
+      totalReferrals: totalReferrals,
+      totalUnvisitedLinks: totalUnvisitedLinks,
     });
   } catch (error) {
     console.error('Error fetching personal profile:', error);
