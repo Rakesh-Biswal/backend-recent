@@ -321,10 +321,9 @@ app.get('/admin/withdrawal-requests', async (req, res) => {
 
 
 // Update withdrawal request status
-app.post('/adminRes/:paymentId', async (req, res) => {
-  const { status } = req.body;
-  const paymentId = req.params.paymentId;
-
+app.post('/adminRes', async (req, res) => {
+  const { status,paymentId } = req.body;
+  
   try {
     const payment = await Payment.findById(paymentId);
 
