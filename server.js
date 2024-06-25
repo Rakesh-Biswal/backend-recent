@@ -337,7 +337,7 @@ app.post('/admin/withdrawal-requests/:paymentId', async (req, res) => {
     await payment.save();
 
     // If the status is "rejected", refund the coins to the user
-    if (status === 'rejected') {
+    if (status == 'rejected') {
       const user = await User.findById(payment.userId);
       if (user) {
         user.coins += payment.withdrawCoin;
