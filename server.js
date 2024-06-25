@@ -182,7 +182,7 @@ app.post('/update-link', async (req, res) => {
 
 app.get('/statistics', async (req, res) => {
   try {
-    
+
     let stats = await Statistics.findOne();
     const totalUsers = await User.countDocuments();
 
@@ -306,6 +306,52 @@ app.get('/withdrawal-history/:userId', async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch withdrawal history' });
   }
 });
+
+
+// Fetch all withdrawal requests endpoint (admin)
+app.get('/admin/withdrawal-requests', async (req, res) => {
+  try {
+    const payments = await Payment.find().populate('userId', 'name');
+    res.json(payments);
+  } catch (error) {
+    console.error('Error fetching withdrawal requests:', error);
+    res.status(500).json({ message: 'Failed to fetch withdrawal requests' });
+  }
+});
+
+
+// Update withdrawal request status endpoint (admin)
+app.post('/admin/withdrawal-requests/:paymentId', async (req, res) => {
+  const { paymentId } = req.params;
+  const { status } = req.body;
+
+  try {
+    const payment = await Payment.findById(paymentId);
+
+    if (!payment) {
+      return res.status(400).json({ message: 'Payment request not found' });
+    }
+
+    payment.status = status;
+
+    await payment.save();
+
+    // If the status is "rejected", refund the coins to the user
+    if (status === 'rejected') {
+      const user = await User.findById(payment.userId);
+      if (user) {
+        user.coins += payment.withdrawCoin;
+        await user.save();
+      }
+    }
+
+    res.json({ message: 'Withdrawal request status updated', payment });
+  } catch (error) {
+    console.error('Error updating withdrawal request status:', error);
+    res.status(500).json({ message: 'Failed to update withdrawal request status' });
+  }
+});
+
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
