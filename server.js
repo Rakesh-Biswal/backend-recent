@@ -322,7 +322,7 @@ app.get('/admin/withdrawal-requests', async (req, res) => {
 
 // Update withdrawal request status endpoint (admin)
 app.post('/admin/withdrawal-requests/:paymentId', async (req, res) => {
-  const { paymentId } = req.params;
+  const { paymentId } = req.params.paymentId;
   const { status } = req.body;
 
   try {
