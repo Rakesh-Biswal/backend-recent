@@ -308,11 +308,11 @@ app.get('/withdrawal-history/:userId', async (req, res) => {
 });
 
 
-// Fetch all withdrawal requests endpoint (admin)
+// Fetch pending withdrawal requests for admin
 app.get('/admin/withdrawal-requests', async (req, res) => {
   try {
-    const payments = await Payment.find().populate('userId', 'name');
-    res.json(payments);
+    const pendingWithdrawals = await Payment.find({ status: 'pending' }).populate('userId', 'name');
+    res.json(pendingWithdrawals);
   } catch (error) {
     console.error('Error fetching withdrawal requests:', error);
     res.status(500).json({ message: 'Failed to fetch withdrawal requests' });
@@ -320,24 +320,22 @@ app.get('/admin/withdrawal-requests', async (req, res) => {
 });
 
 
-// Update withdrawal request status endpoint (admin)
+// Update withdrawal request status
 app.post('/adminRes/:paymentId', async (req, res) => {
-  const { paymentId } = req.params;
   const { status } = req.body;
+  const paymentId = req.params.paymentId;
 
   try {
     const payment = await Payment.findById(paymentId);
 
     if (!payment) {
-      return res.status(400).json({ message: 'Payment request not found' });
+      return res.status(400).json({ message: 'Payment not found' });
     }
 
     payment.status = status;
-
     await payment.save();
 
-    // If the status is "rejected", refund the coins to the user
-    if (status == 'rejected') {
+    if (status === 'rejected') {
       const user = await User.findById(payment.userId);
       if (user) {
         user.coins += payment.withdrawCoin;
@@ -345,7 +343,7 @@ app.post('/adminRes/:paymentId', async (req, res) => {
       }
     }
 
-    res.json({ message: 'Withdrawal request status updated', payment });
+    res.json({ message: `Withdrawal request ${status} successfully` });
   } catch (error) {
     console.error('Error updating withdrawal request status:', error);
     res.status(500).json({ message: 'Failed to update withdrawal request status' });
