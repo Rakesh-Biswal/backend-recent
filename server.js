@@ -248,6 +248,39 @@ app.get('/personal/:userId', async (req, res) => {
   }
 });
 
+
+// Update withdrawal request status
+app.post('/adminRes', async (req, res) => {
+  const { status, paymentId } = req.body;
+
+  try {
+    const payment = await Payment.findById(paymentId);
+
+    if (!payment) {
+      return res.status(400).json({ message: 'Payment not found' });
+    }
+
+    payment.status = status;
+    await payment.save();
+
+    if (status === 'rejected') {
+      const user = await User.findById(payment.userId);
+      if (user) {
+        user.coins += payment.withdrawCoin;
+        await user.save();
+      }
+    }
+
+    res.json({ message: `Withdrawal request ${status} successfully` });
+  } catch (error) {
+    console.error('Error updating withdrawal request status:', error);
+    res.status(500).json({ message: 'Failed to update withdrawal request status' });
+  }
+});
+
+
+
+
 // Remains Coin endpoint
 app.post('/RemainsCoin/:userId', async (req, res) => {
   const { withdrawCoin, UpiId, checkPassword } = req.body;
@@ -320,34 +353,7 @@ app.get('/admin/withdrawal-requests', async (req, res) => {
 });
 
 
-// Update withdrawal request status
-app.post('/adminRes', async (req, res) => {
-  const { status,paymentId } = req.body;
-  
-  try {
-    const payment = await Payment.findById(paymentId);
 
-    if (!payment) {
-      return res.status(400).json({ message: 'Payment not found' });
-    }
-
-    payment.status = status;
-    await payment.save();
-
-    if (status === 'rejected') {
-      const user = await User.findById(payment.userId);
-      if (user) {
-        user.coins += payment.withdrawCoin;
-        await user.save();
-      }
-    }
-
-    res.json({ message: `Withdrawal request ${status} successfully` });
-  } catch (error) {
-    console.error('Error updating withdrawal request status:', error);
-    res.status(500).json({ message: 'Failed to update withdrawal request status' });
-  }
-});
 
 
 app.listen(PORT, () => {
