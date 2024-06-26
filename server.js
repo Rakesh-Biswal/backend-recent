@@ -251,12 +251,16 @@ app.get('/personal/:userId', async (req, res) => {
 
 // Update withdrawal request status
 app.post('/adminRes', async (req, res) => {
-  const { status, paymentId } = req.body;
+  const { status } = req.body;
+  const paymentId = req.query.paymentId;
 
   try {
-    const payment = await Payment.findOne(paymentId);
+    const payment = await Payment.findById(paymentId);
 
-    
+    if (!payment) {
+      return res.status(400).json({ message: 'Payment not found' });
+    }
+
     payment.status = status;
     await payment.save();
 
@@ -274,6 +278,7 @@ app.post('/adminRes', async (req, res) => {
     res.status(500).json({ message: 'Failed to update withdrawal request status' });
   }
 });
+
 
 
 
