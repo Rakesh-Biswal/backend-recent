@@ -311,49 +311,6 @@ app.get('/withdrawal-history/:userId', async (req, res) => {
 });
 
 
-router.get('/withdrawals/pending', async (req, res) => {
-  try {
-    const requests = await Withdrawal.find({ status: 'pending' });
-    res.json({ requests });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-
-router.post('/withdrawals/approve', async (req, res) => {
-  const { requestId } = req.body;
-  try {
-    const request = await Withdrawal.findById(requestId);
-    if (!request) {
-      return res.status(404).json({ message: 'Request not found' });
-    }
-    request.status = 'approved';
-    await request.save();
-    res.json({ message: 'Request approved' });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-router.post('/withdrawals/reject', async (req, res) => {
-  const { requestId } = req.body;
-  try {
-    const request = await Withdrawal.findById(requestId);
-    if (!request) {
-      return res.status(404).json({ message: 'Request not found' });
-    }
-    request.status = 'rejected';
-    await request.save();
-    res.json({ message: 'Request rejected' });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-
-
-
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
