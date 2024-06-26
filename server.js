@@ -251,8 +251,8 @@ app.get('/personal/:userId', async (req, res) => {
 
 // Update withdrawal request status
 app.post('/adminRes', async (req, res) => {
-  const { status } = req.body;
-  const paymentId = req.query.paymentId;
+  const { status,paymentId } = req.body;
+  
 
   try {
     const payment = await Payment.findById(paymentId);
@@ -262,6 +262,7 @@ app.post('/adminRes', async (req, res) => {
     }
 
     payment.status = status;
+    console.log(status);
     await payment.save();
 
     if (status === 'rejected') {
