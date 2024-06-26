@@ -256,10 +256,7 @@ app.post('/adminRes', async (req, res) => {
   try {
     const payment = await Payment.findById(paymentId);
 
-    if (!payment) {
-      return res.status(400).json({ message: 'Payment not found' });
-    }
-
+    
     payment.status = status;
     await payment.save();
 
