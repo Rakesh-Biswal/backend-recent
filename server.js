@@ -254,7 +254,7 @@ app.post('/adminRes', async (req, res) => {
   const { status, paymentId } = req.body;
 
   try {
-    const payment = await Payment.findById(paymentId);
+    const payment = await Payment.findOne(paymentId);
 
     
     payment.status = status;
