@@ -249,39 +249,6 @@ app.get('/personal/:userId', async (req, res) => {
 });
 
 
-// Update withdrawal request status
-app.post('/adminRes', async (req, res) => {
-  const { status,paymentId } = req.body;
-  
-
-  try {
-    const payment = await Payment.findById(paymentId);
-
-    if (!payment) {
-      return res.status(400).json({ message: 'Payment not found' });
-    }
-
-    payment.status = status;
-    console.log(status);
-    await payment.save();
-
-    if (status === 'rejected') {
-      const user = await User.findById(payment.userId);
-      if (user) {
-        user.coins += payment.withdrawCoin;
-        await user.save();
-      }
-    }
-
-    res.json({ message: `Withdrawal request ${status} successfully` });
-  } catch (error) {
-    console.error('Error updating withdrawal request status:', error);
-    res.status(500).json({ message: 'Failed to update withdrawal request status' });
-  }
-});
-
-
-
 
 
 // Remains Coin endpoint
@@ -342,20 +309,6 @@ app.get('/withdrawal-history/:userId', async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch withdrawal history' });
   }
 });
-
-
-// Fetch pending withdrawal requests for admin
-app.get('/admin/withdrawal-requests', async (req, res) => {
-  try {
-    const pendingWithdrawals = await Payment.find({ status: 'pending' }).populate('userId', 'name');
-    res.json(pendingWithdrawals);
-  } catch (error) {
-    console.error('Error fetching withdrawal requests:', error);
-    res.status(500).json({ message: 'Failed to fetch withdrawal requests' });
-  }
-});
-
-
 
 
 
