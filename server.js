@@ -311,55 +311,55 @@ app.get('/withdrawal-history/:userId', async (req, res) => {
 });
 
 
-// Fetch pending withdrawal requests
+
+app.post('/withdrawal-requests/approve', async (req, res) => {
+  const { requestId } = req.body;
+
+  try {
+    const payment = await Payment.findById(requestId);
+    if (!payment) {
+      return res.status(400).json({ message: 'Withdrawal request not found' });
+    }
+
+    payment.status = 'approved';
+    await payment.save();
+
+    res.json({ message: 'Withdrawal request approved successfully' });
+  } catch (error) {
+    console.error('Error approving withdrawal request:', error);
+    res.status(500).json({ message: 'Failed to approve withdrawal request' });
+  }
+});
+
+// Reject a withdrawal request
+app.post('/withdrawal-requests/reject', async (req, res) => {
+  const { requestId } = req.body;
+
+  try {
+    const payment = await Payment.findById(requestId);
+    if (!payment) {
+      return res.status(400).json({ message: 'Withdrawal request not found' });
+    }
+
+    payment.status = 'rejected';
+    await payment.save();
+
+    res.json({ message: 'Withdrawal request rejected successfully' });
+  } catch (error) {
+    console.error('Error rejecting withdrawal request:', error);
+    res.status(500).json({ message: 'Failed to reject withdrawal request' });
+  }
+});
+
+
+
 app.get('/withdrawal-requests', async (req, res) => {
   try {
     const pendingRequests = await Payment.find({ status: 'pending' });
     res.json(pendingRequests);
   } catch (error) {
-    console.error('Error fetching withdrawal requests:', error);
-    res.status(500).json({ message: 'Failed to fetch withdrawal requests' });
-  }
-});
-
-// Approve a withdrawal request
-app.post('/withdrawal-requests/:requestId/approve', async (req, res) => {
-  const requestId = req.params.requestId;
-  
-  try {
-    console.log('Working...');
-    const request = await Payment.findById(requestId);
-    if (!request) {
-      return res.status(400).json({ message: 'Request not found' });
-    }
-
-    request.status = 'approved';
-    await request.save();
-    console.log("Request approved");
-
-    res.json({ message: 'Request approved successfully' });
-  } catch (error) {
-    console.error('Error approving request:', error);
-    res.status(500).json({ message: 'Failed to approve request' });
-  }
-});
-
-// Reject a withdrawal request
-app.post('/withdrawal-requests/:requestId/reject', async (req, res) => {
-  const requestId = req.params.requestId;
-  try {
-    const request = await Payment.findById(requestId);
-    if (!request) {
-      return res.status(400).json({ message: 'Request not found' });
-    }
-
-    request.status = 'rejected';
-    await request.save();
-
-    res.json({ message: 'Request rejected successfully' });
-  } catch (error) {
-    console.error('Error rejecting request:', error);
-    res.status(500).json({ message: 'Failed to reject request' });
+    console.error('Error fetching pending withdrawal requests:', error);
+    res.status(500).json({ message: 'Failed to fetch pending withdrawal requests' });
   }
 });
 
