@@ -331,7 +331,7 @@ app.post('/withdrawal-requests/approve', async (req, res) => {
   }
 });
 
-// Reject a withdrawal request
+
 app.post('/withdrawal-requests/reject', async (req, res) => {
   const { requestId } = req.body;
 
@@ -341,8 +341,16 @@ app.post('/withdrawal-requests/reject', async (req, res) => {
       return res.status(400).json({ message: 'Withdrawal request not found' });
     }
 
+    
     payment.status = 'rejected';
     await payment.save();
+
+    
+    const user = await User.findById(payment.userId);
+    if (user) {
+      user.coins += payment.withdrawCoin;
+      await user.save();
+    }
 
     res.json({ message: 'Withdrawal request rejected successfully' });
   } catch (error) {
@@ -350,6 +358,7 @@ app.post('/withdrawal-requests/reject', async (req, res) => {
     res.status(500).json({ message: 'Failed to reject withdrawal request' });
   }
 });
+
 
 
 
