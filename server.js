@@ -325,6 +325,7 @@ app.get('/withdrawal-requests', async (req, res) => {
 // Approve a withdrawal request
 app.post('/withdrawal-requests/:requestId/approve', async (req, res) => {
   const requestId = req.params.requestId;
+  console.log(requestId);
   try {
     const request = await Payment.findById(requestId);
     if (!request) {
@@ -333,6 +334,7 @@ app.post('/withdrawal-requests/:requestId/approve', async (req, res) => {
 
     request.status = 'approved';
     await request.save();
+    console.log("Request approved");
 
     res.json({ message: 'Request approved successfully' });
   } catch (error) {
