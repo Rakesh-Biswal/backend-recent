@@ -325,8 +325,9 @@ app.get('/withdrawal-requests', async (req, res) => {
 // Approve a withdrawal request
 app.post('/withdrawal-requests/:requestId/approve', async (req, res) => {
   const requestId = req.params.requestId;
-  console.log(requestId);
+  
   try {
+    console.log('Working...');
     const request = await Payment.findById(requestId);
     if (!request) {
       return res.status(400).json({ message: 'Request not found' });
