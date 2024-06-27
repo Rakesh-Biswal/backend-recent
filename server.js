@@ -348,6 +348,7 @@ app.post('/withdrawal-requests/reject', async (req, res) => {
     
     const user = await User.findById(payment.userId);
     if (user) {
+
       user.coins += payment.withdrawCoin;
       await user.save();
     }
@@ -371,8 +372,6 @@ app.get('/withdrawal-requests', async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch pending withdrawal requests' });
   }
 });
-
-
 
 
 app.listen(PORT, () => {
