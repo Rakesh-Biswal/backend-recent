@@ -7,6 +7,7 @@ const User = require('./models/User');
 const Payment = require('./models/Payment'); // Ensure this model is correctly defined
 const Link = require('./models/Link'); // Link model to be created
 const Statistics = require('./models/Statistics');
+const UserDetails = require('./models/UserDetails');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -245,6 +246,27 @@ app.get('/personal/:userId', async (req, res) => {
   } catch (error) {
     console.error('Error fetching personal profile:', error);
     res.status(500).json({ message: 'Failed to fetch profile details' });
+  }
+});
+
+
+
+app.post('/buyer-user', async (req, res) => {
+  const { mobile, nickname } = req.body;
+
+  try {
+    const existingUser = await UserDetails.findOne({ mobile });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Mobile number already exists' });
+    }
+
+    const newUserDetails = new UserDetails({ mobile, nickname });
+    await newUserDetails.save();
+
+    res.json({ message: 'Thanks For being Connect with Us..! We will contact you very soon...' });
+  } catch (error) {
+    console.error('Error during registration:', error);
+    res.status(500).json({ message: 'Sending failed' });
   }
 });
 
