@@ -402,8 +402,17 @@ app.post('/admin/update-ad', async (req, res) => {
   const { linkIndex, adLink, adImage } = req.body;
 
   try {
-    await Ad.findOneAndUpdate({ linkIndex }, { adLink, adImage }, { upsert: true });
-    res.json({ success: true });
+    const updatedAd = await Ad.findOneAndUpdate(
+      { linkIndex },
+      { adLink, adImage },
+      { new: true, upsert: false } // `upsert: false` to prevent new document creation
+    );
+
+    if (!updatedAd) {
+      return res.status(404).json({ success: false, message: 'Ad not found' });
+    }
+
+    res.json({ success: true, data: updatedAd });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
