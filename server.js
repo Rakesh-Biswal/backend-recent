@@ -398,26 +398,19 @@ app.get('/withdrawal-requests', async (req, res) => {
 
 
 
-app.post('/admin/update-ad', async (req, res) => {
+app.post('/update-ad', async (req, res) => {
   const { linkIndex, adLink, adImage } = req.body;
 
-  console.log('Received data:', req.body);
-
-  if (!linkIndex || !adLink || !adImage) {
-    return res.status(400).json({ success: false, message: 'All fields are required' });
-  }
-
   try {
-    const updatedAd = await Ad.findOneAndUpdate(
-      { linkIndex },
-      { adLink, adImage },
-      { new: true, upsert: true } // upsert: true creates a new document if none exists
-    );
+      const updatedAd = await Ad.findOneAndUpdate(
+          { linkIndex: linkIndex }, // Find the document by linkIndex
+          { adLink, adImage }, // Update the adLink and adImage fields
+          { new: true, upsert: true } // Create a new document if it doesn't exist
+      );
 
-    res.json({ success: true, data: updatedAd });
+      res.status(200).json({ message: 'Ad updated successfully', ad: updatedAd });
   } catch (error) {
-    console.error('Error updating ad:', error);
-    res.status(500).json({ success: false, message: 'Failed to update ad', error: error.message });
+      res.status(500).json({ message: 'Failed to update ad', error });
   }
 });
 
