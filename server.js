@@ -8,6 +8,7 @@ const Payment = require('./models/Payment'); // Ensure this model is correctly d
 const Link = require('./models/Link'); // Link model to be created
 const Statistics = require('./models/Statistics');
 const UserDetails = require('./models/UserDetails');
+const Ad = require('./models/adSchema'); // Import the schema
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -392,6 +393,29 @@ app.get('/withdrawal-requests', async (req, res) => {
   } catch (error) {
     console.error('Error fetching pending withdrawal requests:', error);
     res.status(500).json({ message: 'Failed to fetch pending withdrawal requests' });
+  }
+});
+
+
+
+app.post('/admin/update-ad', async (req, res) => {
+  const { linkIndex, adLink, adImage } = req.body;
+
+  try {
+    await Ad.findOneAndUpdate({ linkIndex }, { adLink, adImage }, { upsert: true });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Endpoint to fetch ad data
+app.get('/admin/get-ad', async (req, res) => {
+  try {
+    const ad = await Ad.findOne().sort({ linkIndex: 1 }).exec();
+    res.json(ad);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
