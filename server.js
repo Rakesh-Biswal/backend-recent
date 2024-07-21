@@ -364,11 +364,11 @@ app.post('/withdrawal-requests/reject', async (req, res) => {
       return res.status(400).json({ message: 'Withdrawal request not found' });
     }
 
-    
+
     payment.status = 'rejected';
     await payment.save();
 
-    
+
     const user = await User.findById(payment.userId);
     if (user) {
 
@@ -401,20 +401,23 @@ app.get('/withdrawal-requests', async (req, res) => {
 app.post('/admin/update-ad', async (req, res) => {
   const { linkIndex, adLink, adImage } = req.body;
 
+  console.log('Received data:', req.body);
+
+  if (!linkIndex || !adLink || !adImage) {
+    return res.status(400).json({ success: false, message: 'All fields are required' });
+  }
+
   try {
     const updatedAd = await Ad.findOneAndUpdate(
       { linkIndex },
       { adLink, adImage },
-      { new: true, upsert: false } // `upsert: false` to prevent new document creation
+      { new: true, upsert: true } // upsert: true creates a new document if none exists
     );
-
-    if (!updatedAd) {
-      return res.status(404).json({ success: false, message: 'Ad not found' });
-    }
 
     res.json({ success: true, data: updatedAd });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Error updating ad:', error);
+    res.status(500).json({ success: false, message: 'Failed to update ad', error: error.message });
   }
 });
 
