@@ -398,16 +398,20 @@ app.get('/withdrawal-requests', async (req, res) => {
 
 
 
-app.post('/admin/update-ad', async (req, res) => {
+app.put('/admin/update-ad', async (req, res) => {
   const { linkIndex, adLink, adImage } = req.body;
 
   try {
-      const updatedAd = await Ad.findOneAndUpdate(
-          { linkIndex: linkIndex }, // Find the document by linkIndex
-          { adLink, adImage }, // Update the adLink and adImage fields
-          { new: true, upsert: true } // Create a new document if it doesn't exist
-      );
-
+      const updatedAd = await Ad.findOne();
+      if(updatedAd) {
+        updatedAd.adImage = adImage;
+        updatedAd.adLink=adLink;
+        updatedAd.linkIndex=linkIndex;
+        updatedAd.save();
+      }
+      else{
+        res.status(400).json({ message: 'did not found the ad', ad: updatedAd });
+      }
       res.status(200).json({ message: 'Ad updated successfully', ad: updatedAd });
   } catch (error) {
       res.status(500).json({ message: 'Failed to update ad', error });
