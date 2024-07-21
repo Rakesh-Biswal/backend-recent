@@ -398,7 +398,7 @@ app.get('/withdrawal-requests', async (req, res) => {
 
 
 
-app.post('/update-ad', async (req, res) => {
+app.post('/admin/update-ad', async (req, res) => {
   const { linkIndex, adLink, adImage } = req.body;
 
   try {
