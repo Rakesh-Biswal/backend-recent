@@ -13,6 +13,9 @@ const paymentSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  PhoneNo: {
+    type: String,
+  },
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],
