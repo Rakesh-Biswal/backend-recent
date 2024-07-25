@@ -1,15 +1,11 @@
+// models/Statistics.js
 const mongoose = require('mongoose');
 
-// Define schema for Statistics
 const statisticsSchema = new mongoose.Schema({
-    
-    linkClicksToday: {
-        type: Number,
-        default: 0
-    }
+  date: { type: Date, required: true, unique: true },
+  linkClicks: { type: Number, default: 0 },
 });
 
-// Create model for Statistics
 const Statistics = mongoose.model('Statistics', statisticsSchema);
 
 module.exports = Statistics;

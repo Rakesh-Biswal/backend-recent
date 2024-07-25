@@ -184,12 +184,19 @@ app.post('/update-link', async (req, res) => {
 
 app.get('/statistics', async (req, res) => {
   try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    let stats = await Statistics.findOne();
+    let stats = await Statistics.findOne({ date: today });
+    if (!stats) {
+      stats = new Statistics({ date: today, linkClicks: 0 });
+      await stats.save();
+    }
+
     const totalUsers = await User.countDocuments();
 
     res.json({
-      linkClicksToday: stats.linkClicksToday,
+      linkClicksToday: stats.linkClicks,
       totalUsers: totalUsers,
     });
   } catch (error) {
@@ -199,6 +206,28 @@ app.get('/statistics', async (req, res) => {
 });
 
 
+
+app.get('/statistics/date', async (req, res) => {
+  try {
+    const { date } = req.query;
+    if (!date) {
+      return res.status(400).json({ message: 'Date is required' });
+    }
+
+    const selectedDate = new Date(date);
+    selectedDate.setHours(0, 0, 0, 0);
+
+    let stats = await Statistics.findOne({ date: selectedDate });
+    if (!stats) {
+      return res.status(404).json({ message: 'No data found for the selected date' });
+    }
+
+    res.json({ linkClicks: stats.linkClicks });
+  } catch (error) {
+    console.error('Error fetching statistics by date:', error);
+    res.status(500).json({ message: 'Failed to fetch statistics' });
+  }
+});
 
 
 
