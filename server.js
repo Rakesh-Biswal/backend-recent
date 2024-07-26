@@ -107,7 +107,23 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Admin login endpoint
+
+app.post('/check-ip', async (req, res) => {
+  const clientIp = req.clientIp;
+
+  try {
+      const user = await User.findOne({ ip: clientIp });
+      if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+      }
+      res.json({ message: 'User found', userId: user._id });
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ message: 'Error checking IP' });
+  }
+});
+
+
 app.post('/admin/login', (req, res) => {
   const { email, password } = req.body;
   if (email === "ABR@gmail.com" && password === "abr123") {
