@@ -114,7 +114,7 @@ app.post('/check-ip', async (req, res) => {
   try {
       const user = await User.findOne({ ip: clientIp });
       if (!user) {
-          return res.status(404).json({ message: 'User not found' });
+          return res.status(404).json({ message: `User not Found id=${clientIp}` });
       }
       res.json({ message: 'User found', userId: user._id });
   } catch (error) {
