@@ -109,12 +109,12 @@ app.post('/login', async (req, res) => {
 
 
 app.post('/check-ip', async (req, res) => {
-  const clientIp = req.clientIp;
+  const clientIp = req.clientIp || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
   try {
       const user = await User.findOne({ ip: clientIp });
       if (!user) {
-          return res.status(404).json({ message: `User not Found id=${clientIp}` });
+          return res.status(404).json({ message: `User not Found  at id=${clientIp}` });
       }
       res.json({ message: 'User found', userId: user._id });
   } catch (error) {
