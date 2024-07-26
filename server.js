@@ -156,6 +156,7 @@ app.post('/update-link', async (req, res) => {
 
       // Update link click statistics
       const today = new Date();
+      today.setHours(0, 0, 0, 0);
       let stats = await Statistics.findOne({ date: today });
       if (stats) {
         stats.linkClicks++;
