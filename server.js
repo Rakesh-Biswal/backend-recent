@@ -452,6 +452,7 @@ app.get('/admin/get-ad', async (req, res) => {
   try {
     const index = parseInt(req.query.index);
     const ad = await Ad.findOne({ index });
+    console.log(index, ad);
     if (ad) {
       res.json({Idx : ad.linkIndex,
                 IdxLnk: ad.adLink,
