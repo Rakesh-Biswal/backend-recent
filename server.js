@@ -451,8 +451,8 @@ app.post('/admin/update-ad', async (req, res) => {
 
 app.get('/admin/get-ad', async (req, res) => {
   try {
-    const index = parseInt(req.query.index);
-    const ad = await Ad.find(ad => ad.linkIndex === index);
+    const {index} = req.query;
+    const ad = await Ad.findOne({ linkIndex:index });
     console.log(index, ad);
     if (ad) {
       res.json({Idx : ad.linkIndex,
