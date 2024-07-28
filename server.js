@@ -450,7 +450,7 @@ app.post('/admin/update-ad', async (req, res) => {
 // Endpoint to fetch ad data
 app.get('/admin/get-ad', async (req, res) => {
   try {
-    const index = 6;
+    const index = parseInt(req.query.index);
     const ad = await Ad.findOne({ linkIndex:index });
     console.log(index, ad);
     if (ad) {
@@ -459,7 +459,7 @@ app.get('/admin/get-ad', async (req, res) => {
                 IdxImg: ad.adImage,
       });
     } else {
-      res.status(404).json({ message: 'Ad not found' });
+      res.status(404).json({ message: `error due to ${index}` });
     }
   } catch (error) {
     res.status(500).json({ message:'some error occouring' });
