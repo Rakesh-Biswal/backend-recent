@@ -453,7 +453,10 @@ app.get('/admin/get-ad', async (req, res) => {
     const index = parseInt(req.query.index);
     const ad = await Ad.findOne({ index });
     if (ad) {
-      res.json(ad);
+      res.json({Idx : ad.linkIndex,
+                IdxLnk: ad.adLink,
+                IdxImg: ad.adImage,
+      });
     } else {
       res.status(404).json({ message: 'Ad not found' });
     }
