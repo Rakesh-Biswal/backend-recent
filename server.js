@@ -333,7 +333,7 @@ app.post('/RemainsCoin/:userId', async (req, res) => {
     const Name = user.name;
     const PhoneNo = user.phone;
 
-    const newPayment = new Payment({ Name, withdrawCoin, UpiId, userId,PhoneNo});
+    const newPayment = new Payment({ Name, withdrawCoin, UpiId, userId, PhoneNo });
     await newPayment.save();
 
     const RemainCoin = TotalCoin - withdrawCoin;
@@ -435,27 +435,28 @@ app.post('/admin/update-ad', async (req, res) => {
   const { linkIndex, adLink, adImage } = req.body;
 
   try {
-      const updatedAd = await Ad.findOne();
-      if(updatedAd) {
-        updatedAd.adImage = adImage;
-        updatedAd.adLink=adLink;
-        updatedAd.linkIndex=linkIndex;
-        updatedAd.save();
-      }
-      else{
-        res.status(400).json({ message: 'did not found the ad', ad: updatedAd });
-      }
-      res.status(200).json({ message: 'Ad updated successfully', ad: updatedAd });
+    const updatedAd = await Ad.findOne({ linkIndex });
+    if (updatedAd) {
+      return res.status(400).json({ message: 'Index number already exists' });
+    }
+    const NewAdUpdate = new Ad({ linkIndex, adLink, adImage });
+    await NewAdUpdate.save();
+    res.json({ message: 'Thanks For Ad Updating...' });
   } catch (error) {
-      res.status(500).json({ message: 'Failed to update ad', error });
+    res.status(500).json({ message: 'Failed to update ad', error });
   }
 });
 
 // Endpoint to fetch ad data
 app.get('/admin/get-ad', async (req, res) => {
   try {
-    const ad = await Ad.findOne().sort({ linkIndex: 1 }).exec();
-    res.json(ad);
+    const index = parseInt(req.query.index);
+    const ad = await Ad.findOne({ index });
+    if (ad) {
+      res.json(ad);
+    } else {
+      res.status(404).json({ message: 'Ad not found' });
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
