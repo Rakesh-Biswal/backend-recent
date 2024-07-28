@@ -450,7 +450,7 @@ app.post('/admin/update-ad', async (req, res) => {
 // Endpoint to fetch ad data
 app.get('/admin/get-ad', async (req, res) => {
   try {
-    const index = parseInt(req.query.index);
+    const index = 6;
     const ad = await Ad.findOne({ linkIndex:index });
     console.log(index, ad);
     if (ad) {
