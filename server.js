@@ -461,7 +461,7 @@ app.get('/admin/get-ad', async (req, res) => {
       res.status(404).json({ message: 'Ad not found' });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message:'some error occouring' });
   }
 });
 
