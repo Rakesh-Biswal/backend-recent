@@ -3,6 +3,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const requestIp = require('request-ip');
+const cookieParser = require('cookie-parser');
+const { v4: uuidv4 } = require('uuid');
 const User = require('./models/User');
 const Payment = require('./models/Payment'); // Ensure this model is correctly defined
 const Link = require('./models/Link'); // Link model to be created
@@ -35,6 +37,7 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
 app.use(express.json());
+app.use(cookieParser());
 app.use(requestIp.mw());
 
 // Registration endpoint
@@ -100,6 +103,21 @@ app.post('/login', async (req, res) => {
     if (user.password !== password) {
       return res.status(400).json({ message: 'Invalid password' });
     }
+    const browserIdentifier = req.cookies.browserIdentifier;
+
+    if (!browserIdentifier) {
+      // If there's no identifier in cookies, create one and store it
+      const newBrowserIdentifier = uuidv4();
+      res.cookie('browserIdentifier', newBrowserIdentifier, { httpOnly: true });
+      user.browserIdentifier = newBrowserIdentifier;
+      await user.save();
+    } else {
+      // If there is an identifier, check if it matches the one in the database
+      if (user.browserIdentifier !== browserIdentifier) {
+        return res.status(400).json({ message: 'Invalid browser identifier' });
+      }
+    }
+
     res.json({ message: 'Login successful', userId: user._id });
   } catch (error) {
     console.error('Error:', error);
