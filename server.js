@@ -92,6 +92,29 @@ app.post('/register', async (req, res) => {
   }
 });
 
+
+
+
+app.use((req, res, next) => {
+  const browserIdentifier = req.cookies.browserIdentifier;
+
+  if (browserIdentifier) {
+    User.findOne({ browserIdentifier }).then(user => {
+      if (user) {
+        if (req.path === '/login') {
+          return res.status(403).json({ message: 'Mass login detected. Only one user can be logged in per browser.' });
+        }
+        req.user = user; // Attach user to the request object
+      }
+      next();
+    }).catch(err => {
+      res.status(500).json({ message: 'Server error', err });
+    });
+  } else {
+    next();
+  }
+});
+
 // Login endpoint
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
@@ -103,22 +126,21 @@ app.post('/login', async (req, res) => {
     if (user.password !== password) {
       return res.status(400).json({ message: 'Invalid password' });
     }
-    const browserIdentifier = req.cookies.browserIdentifier;
-
-    if (!browserIdentifier) {
-      // If there's no identifier in cookies, create one and store it
-      const newBrowserIdentifier = uuidv4();
-      res.cookie('browserIdentifier', newBrowserIdentifier, { httpOnly: true });
-      user.browserIdentifier = newBrowserIdentifier;
+    if (!req.cookies.browserIdentifier) {
+      // Generate a new browser identifier if one doesn't exist
+      const browserIdentifier = uuidv4();
+      user.browserIdentifier = browserIdentifier;
       await user.save();
+
+      // Set the browser identifier in cookies
+      res.cookie('browserIdentifier', browserIdentifier, { httpOnly: true, secure: true });
+
+      res.json({ message: 'Login successful', userId: user._id });
     } else {
-      // If there is an identifier, check if it matches the one in the database
-      if (user.browserIdentifier !== browserIdentifier) {
-        return res.status(400).json({ message: 'Invalid browser identifier' });
-      }
+      // If a browserIdentifier already exists in the cookies, reject the login
+      return res.status(403).json({ message: 'Mass login detected. Only one user can be logged in per browser.' });
     }
 
-    res.json({ message: 'Login successful', userId: user._id });
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ message: 'Login failed' });
