@@ -124,7 +124,7 @@ app.post('/login', async (req, res) => {
       user.chromeIp = clientIp;
       const existingIpUser = await User.findOne({ chromeIp: clientIp });
       if (existingIpUser) {
-        return res.status(400).json({ message: 'This browser is already associated with another account' });
+        return res.status(400).json({ message: 'This is not Your Account..' });
       }
       await user.save();
       return res.json({ message: 'Login successful and IP set', userId: user._id });
