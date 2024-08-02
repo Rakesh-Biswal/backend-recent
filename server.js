@@ -117,7 +117,7 @@ app.post('/login', async (req, res) => {
         return res.json({ message: 'Login successful', userId: user._id });
       } else {
 
-        return res.status(400).json({ message: 'Login denied: different browser session detected' });
+        return res.status(400).json({ message: 'Multiple Accounnt Do not Accepted' });
       }
     } else {
 
