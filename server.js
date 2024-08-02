@@ -97,22 +97,44 @@ app.post('/register', async (req, res) => {
 // Login endpoint
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
+  const clientIp = req.clientIp;
+
   try {
     const user = await User.findOne({ email });
+
     if (!user) {
       return res.status(400).json({ message: 'User not found' });
     }
+
     if (user.password !== password) {
       return res.status(400).json({ message: 'Invalid password' });
     }
 
-    res.json({ message: 'Login successful', userId: user._id });
+    if (user.chromeIp) {
+      
+      if (user.chromeIp === clientIp) {
 
+        return res.json({ message: 'Login successful', userId: user._id });
+      } else {
+
+        return res.status(400).json({ message: 'Login denied: different browser session detected' });
+      }
+    } else {
+
+      user.chromeIp = clientIp;
+      const existingIpUser = await User.findOne({ chromeIp: clientIp });
+      if (existingIpUser) {
+        return res.status(400).json({ message: 'This browser is already associated with another account' });
+      }
+      await user.save();
+      return res.json({ message: 'Login successful and IP set', userId: user._id });
+    }
   } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ message: 'Login failed' });
+    console.error('Error during login:', error);
+    return res.status(500).json({ message: 'Login failed' });
   }
 });
+
 
 
 
