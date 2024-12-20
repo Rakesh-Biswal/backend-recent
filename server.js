@@ -491,6 +491,11 @@ app.get('/admin/get-ad', async (req, res) => {
 });
 
 
+app.get('/api/ping', (req, res) => {
+  res.status(200).send('Server is up and running');
+});
+
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
